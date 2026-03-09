@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panel Startowy i SLAM</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Roboto:wght@500&display=swap" rel="stylesheet">
+<style>
+    html, body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        width: 100%;
+        font-family: 'IBM Plex Mono', monospace;
+        background-color: #f5f5f5;
+        color: #111;
+    }
+
+    .panel {
+        display: none;
+        height: 100%;
+        width: 100%;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        display: flex;
+    }
+
+    /* Panel Startowy */
+    #start-panel {
+        background-color: #f5f5f5;
+    }
+    #start-panel h1 {
+        font-size: 42px;
+        margin-bottom: 30px;
+        font-weight: 400;
+        letter-spacing: 1px;
+    }
+    #start-panel button {
+        padding: 14px 28px;
+        font-size: 16px;
+        cursor: pointer;
+        border: 2px solid #111;
+        background-color: #fff;
+        color: #111;
+        text-transform: uppercase;
+        font-weight: 500;
+        border-radius: 0;
+        transition: all 0.2s ease;
+        font-family: 'Roboto', sans-serif;
+    }
+    #start-panel button:hover {
+        background-color: #111;
+        color: #fff;
+    }
+
+    /* Panel SLAM */
+    #slam-panel {
+        background-color: #222;
+        color: #0f0;
+        font-size: 48px;
+        font-weight: 600;
+        flex-direction: column;
+    }
+    #slam-panel canvas {
+        border: 2px solid #0f0;
+        width: 80%;
+        height: 60%;
+        background-color: #111;
+        margin-bottom: 30px;
+    }
+    #slam-panel button {
+        padding: 14px 28px;
+        font-size: 16px;
+        cursor: pointer;
+        border: 2px solid #0f0;
+        background-color: #111;
+        color: #0f0;
+        text-transform: uppercase;
+        font-weight: 500;
+        border-radius: 0;
+        transition: all 0.2s ease;
+        font-family: 'Roboto', sans-serif;
+    }
+    #slam-panel button:hover {
+        background-color: #0f0;
+        color: #111;
+    }
+</style>
+</head>
+<body>
+
+<!-- Panel Startowy -->
+<div id="start-panel" class="panel" style="display:flex;">
+    <h1>Panel Startowy</h1>
+    <button id="next-button">Visualizer</button>
+</div>
+
+<!-- Panel SLAM -->
+<div id="slam-panel" class="panel">
+    SLAM Visualizer
+    <canvas id="slam-canvas"></canvas>
+    <button id="back-button">Powrót</button>
+</div>
+
+<script>
+const startPanel = document.getElementById('start-panel');
+const slamPanel = document.getElementById('slam-panel');
+const nextButton = document.getElementById('next-button');
+const backButton = document.getElementById('back-button');
+
+nextButton.addEventListener('click', () => {
+    startPanel.style.display = 'none';
+    slamPanel.style.display = 'flex';
+});
+
+backButton.addEventListener('click', () => {
+    slamPanel.style.display = 'none';
+    startPanel.style.display = 'flex';
+});
+</script>
+
+</body>
+</html>
