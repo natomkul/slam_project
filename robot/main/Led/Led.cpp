@@ -18,12 +18,15 @@ void Led::off(){
 }
 
 void Led::blinkOn(){
-    on();
-    std::this_thread::sleep_for(std::chrono::milliseconds(1000/blinkFrequency));
-    off();
-    std::this_thread::sleep_for(std::chrono::milliseconds(1000/blinkFrequency));
+    blinkingState = ON;
+    while(blinkingState){
+        on();
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000/blinkFrequency));
+        off();
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000/blinkFrequency));
+    }
 }
 
 void Led::blinkOff(){
-
+    blinkingState = OFF;
 }
