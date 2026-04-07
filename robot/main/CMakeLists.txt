@@ -10,5 +10,8 @@ idf_component_register(SRCS
     "Robot/Robot.cpp"
     "Uart/Uart.cpp"
     "main.cpp"
+    REQUIRES esp_driver_uart
+    REQUIRES esp_driver_i2c
+    REQUIRES esp_driver_gpio
+    REQUIRES esp_driver_ledc
     INCLUDE_DIRS ".")
-

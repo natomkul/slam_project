@@ -16,7 +16,7 @@ class I2c{
     ~I2c() = default;
     
     void setUpMaster();
-    std::shared_ptr<I2cSlave>  createSlave(uint8_t reg);
+    std::shared_ptr<I2cSlave> createSlave(uint8_t reg);
     void transmit(std::shared_ptr<I2cSlave> slave, uint8_t reg, uint8_t* cmd, uint8_t writeSize);
     void transmitReceive(std::shared_ptr<I2cSlave> slave, uint8_t reg, uint8_t* buffer, uint8_t writeSize);
 

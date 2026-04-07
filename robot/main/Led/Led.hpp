@@ -1,6 +1,7 @@
 #pragma once
 
 #include "driver/gpio.h"
+#include "Pwm/Pwm.hpp"
 
 #define HIGH 1
 #define LOW 0
@@ -13,7 +14,6 @@ enum BlinkingState {
 /*
 Controls single LED
 */
-
 
 class Led {
     public:

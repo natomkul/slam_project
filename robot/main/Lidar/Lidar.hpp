@@ -13,9 +13,9 @@ into packages that can be sent further.
 
 class Lidar {
     public:
-    Lidar(uint32_t reg, uint32_t baudRate) : uart{reg, baudRate}{};
+    Lidar(uint16_t TxPin, uint16_t RxPin, int baudRate) : uart{TxPin, RxPin, baudRate}{};
     ~Lidar() = default;
-
+        
     void startReceiving();
     void stopReceiving();
 
