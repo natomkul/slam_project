@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Accelerometer/Accelerometer.hpp"
+#include "DataExchanger/DataExchanger.hpp"
 #include "Led/Leds.hpp"
 #include "Lidar/Lidar.hpp"
 #include "Motor/Motor.hpp"
@@ -11,11 +12,13 @@ Class of robot itself.
 */
 class Robot {
     public:
-    Robot(Accelerometer accelerometer, Leds leds, Lidar lidar, Motor motor) :
+    Robot(Accelerometer accelerometer, Leds leds, Lidar lidar, Motor motor, DataExchanger dataExchanger) :
         accelerometer(accelerometer),
         leds(leds),
         lidar(lidar),
-        motor(motor) {}
+        motor(motor),
+        dataExchanger(dataExchanger)
+        {}
     ~Robot() = default;
 
     private:
@@ -24,4 +27,5 @@ class Robot {
     Lidar lidar;
     Motor motor;
     State state;
+    DataExchanger dataExchanger;
 };

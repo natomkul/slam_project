@@ -1,9 +1,16 @@
 #pragma once
 
 #include "driver/gpio.h"
+#include "Pwm/Pwm.hpp"
 
 #define HIGH 1
 #define LOW 0
+
+enum BlinkingState {
+    OFF,
+    ON
+};
+
 /*
 Controls single LED
 */
@@ -25,6 +32,7 @@ class Led {
     ~Led()
     {
         off();
+        blinkOff();
     }
     void on();
     void off();
@@ -34,4 +42,6 @@ class Led {
     private:
     const gpio_num_t portNumber;
     const uint32_t blinkFrequency;
+
+    BlinkingState blinkingState = OFF;
 };

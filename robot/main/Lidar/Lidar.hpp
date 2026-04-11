@@ -2,6 +2,8 @@
 
 #include "LidarFrame.hpp"
 #include "Uart/Uart.hpp"
+#include <cstdint>
+#include <chrono>
 
 /*
 Class to get data from LiDAR sensor, and convert it
@@ -13,12 +15,22 @@ into packages that can be sent further.
 
 class Lidar {
     public:
-    Lidar(uint32_t reg, uint32_t baudRate) : uart{reg, baudRate}{};
-    ~Lidar() = default;
+    Uart uart;
+    const uint16_t bufferSize = 2048;
+    uint8_t data[2048];
+    uint8_t size;
+    int length;
 
+    Lidar(uint16_t TxPin, uint16_t RxPin, int baudRate) : uart{TxPin, RxPin, baudRate, data, 2048, length}{};
+    ~Lidar(){
+        isReceiving = false;
+    };
+        
     void startReceiving();
     void stopReceiving();
 
     private:
-    Uart uart;
+    bool isReceiving = false;
+    uint sleepTime = 10;
+
 };

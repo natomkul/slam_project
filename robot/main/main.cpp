@@ -5,35 +5,40 @@
 #include "Robot/Robot.hpp"
 #include <chrono>
 #include <thread>
+#include "driver/i2c_master.h"
+#include <thread>
 
 extern "C" {
     void app_main(void);
 }
+    const uint32_t sleep_time = 200;
+
 
 void app_main()
 {
-    printf("Hello!\n");
+    // Leds leds
 
-    // Robot robot{Accelerometer{}, Leds{}, Lidar{1, 1}, Motor{}};
-    gpio_num_t redLedPortNumber = GPIO_NUM_5;
-    gpio_num_t yellowLedPortNumber = GPIO_NUM_6;
-    gpio_num_t greenLedPortNumber = GPIO_NUM_7;
-    Leds leds;
-    leds.addLed(redLedPortNumber, 2);
-    leds.addLed(yellowLedPortNumber, 2);
-    leds.addLed(greenLedPortNumber, 2);
+    // Motor
 
-    int t = 1000;
+    I2c i2c{0, GPIO_NUM_8, GPIO_NUM_9};
+    Accelerometer accelerometer{i2c, 0x68, 0x04, 0x7E};
+    
+    Lidar lidar{11, 12, 230400};
 
-    while(t-- > 0){
-        leds[redLedPortNumber].on();
-        std::this_thread::sleep_for(std::chrono::milliseconds(200));
-        leds[redLedPortNumber].off();
-        leds[yellowLedPortNumber].on();
-        std::this_thread::sleep_for(std::chrono::milliseconds(200));
-        leds[yellowLedPortNumber].off();
-        leds[greenLedPortNumber].on();
-        std::this_thread::sleep_for(std::chrono::milliseconds(200));
-        leds[greenLedPortNumber].off();
+    // Robot robot{Accelerometer{i2c, 0x68, 0x04, 0x7E}, Leds{}, Lidar{11, 12, 230400}, Motor{}, DataExchanger{}};
+
+    std::thread t1(&Accelerometer::startMeasuring, accelerometer);
+    std::thread t2(&Lidar::startReceiving, lidar);
+
+    uint length;
+    while(true){
+        printf("measurement start\n");
+        length = lidar.length;
+        for (int i = 0; i < length; i++) {
+            printf("%02X ", lidar.data[i]);
+        }
+        printf("\n");
+        printf("measurement end\n");
+        vTaskDelay(sleep_time * 10/portTICK_PERIOD_MS); 
     }
-}
+};
