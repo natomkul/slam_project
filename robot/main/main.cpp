@@ -6,6 +6,7 @@
 #include <chrono>
 #include <thread>
 #include "driver/i2c_master.h"
+#include <thread>
 
 extern "C" {
     void app_main(void);
@@ -15,13 +16,29 @@ extern "C" {
 
 void app_main()
 {
-    vTaskDelay(sleep_time * 10/portTICK_PERIOD_MS);
-    printf("start\n");
-
-    I2c i2c{0, GPIO_NUM_8, GPIO_NUM_9};
     // Leds leds
-    Lidar lidar{11, 12, 116800};
+
     // Motor
 
-    // Robot robot{Accelerometer{i2c, 0x68, 0x04, 0x7E}, Leds{}, Lidar{1, 1}, Motor{}, DataExchanger{}};
+    I2c i2c{0, GPIO_NUM_8, GPIO_NUM_9};
+    Accelerometer accelerometer{i2c, 0x68, 0x04, 0x7E};
+    
+    Lidar lidar{11, 12, 230400};
+
+    // Robot robot{Accelerometer{i2c, 0x68, 0x04, 0x7E}, Leds{}, Lidar{11, 12, 230400}, Motor{}, DataExchanger{}};
+
+    std::thread t1(&Accelerometer::startMeasuring, accelerometer);
+    std::thread t2(&Lidar::startReceiving, lidar);
+
+    uint length;
+    while(true){
+        printf("measurement start\n");
+        length = lidar.length;
+        for (int i = 0; i < length; i++) {
+            printf("%02X ", lidar.data[i]);
+        }
+        printf("\n");
+        printf("measurement end\n");
+        vTaskDelay(sleep_time * 10/portTICK_PERIOD_MS); 
+    }
 };

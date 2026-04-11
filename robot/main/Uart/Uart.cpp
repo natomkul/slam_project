@@ -5,7 +5,12 @@ void Uart::transmit(){
 }
 
 void Uart::receive(){
-    length = 0;
-    ESP_ERROR_CHECK(uart_get_buffered_data_len(uart_num, (size_t*)&length));
-    length = uart_read_bytes(uart_num, data, length, 100);
+    size_t available = 0;
+    uart_get_buffered_data_len(uart_num, &available);
+
+    if (available > 0) {
+        length = uart_read_bytes(uart_num, data, available, 1000);
+    } else {
+        length = 0;
+    }
 }

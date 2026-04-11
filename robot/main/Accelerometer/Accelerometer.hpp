@@ -22,7 +22,6 @@ struct AccelerometerData {
     int16_t accelerationY;
     int16_t accelerationZ;
 };
-
 class Accelerometer {
     public:
     Accelerometer(I2c& i2c, const uint8_t i2cAddress, const uint8_t dataRegister, const uint8_t cmdRegister) :
@@ -33,7 +32,9 @@ class Accelerometer {
     {
         initializeI2c();
     };
-    ~Accelerometer() = default;
+    ~Accelerometer(){
+        isMeasuring = false;
+    };
 
     void initializeI2c();
     void calibrate();
