@@ -8,22 +8,14 @@ enum class DataType{
     ACCELEROMETER
 };
 
-struct Packet {
+class Packet {
+public:
     DataType type;
     uint16_t length;
-    uint8_t packedData[2056];
+    uint8_t packedData[2048];
 
     Packet() = default;
-    Packet(DataType type, uint16_t length, const uint8_t* data) : type(type), length(length)
-    {
-        if (length > 2048) {
-            this->length = 2048;
-        }
-        packedData[0] = 0x00;
-        packedData[1] = 0x00;
-        packedData[2] = length & 0xFF;
-        packedData[3] = length >> 8;
-
-        memcpy(packedData + 4, data, length);
-    }
+    Packet(DataType type, uint16_t length, const uint8_t* data);
+    ~Packet() = default;
+    void packAccelometerData(const uint8_t* data);
 };

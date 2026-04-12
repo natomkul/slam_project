@@ -131,7 +131,7 @@ void DataExchanger::tcpSendTask(void* arg)
     while (true)
     {
         Packet packet = self->lidarReceiveData();
-        int totalLen = packet.length + 3;
+        int totalLen = packet.type == DataType::LIDAR ? packet.length : packet.length + 3;
 
         int sent = send(sock, packet.packedData, totalLen, 0);
         if (sent < 0)
