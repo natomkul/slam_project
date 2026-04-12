@@ -37,3 +37,11 @@ void Accelerometer::getMeasurement(){
     data.accelerationY = (buffer[16] << 8) | buffer[17];
     data.accelerationZ = (buffer[18] << 8) | buffer[19];
 }
+
+Packet Accelerometer::receivePackedData()
+{
+    packedData[0] = 0x00;
+    packedData[1] = 0x00;
+    std::memcpy(packedData + 2, &data, sizeof(AccelerometerData));
+    return Packet(packedData, 22);
+}

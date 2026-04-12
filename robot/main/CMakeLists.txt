@@ -1,7 +1,6 @@
 idf_component_register(SRCS 
     "Accelerometer/Accelerometer.cpp"
     "DataExchanger/DataExchanger.cpp" 
-    "DataExchanger/Packet.cpp" 
     "I2c/I2c.cpp"
     "I2c/I2cSlave.cpp"
     "Led/Led.cpp"

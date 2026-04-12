@@ -42,9 +42,13 @@ void app_main()
     //     printf("measurement end\n");
     //     vTaskDelay(sleep_time * 10/portTICK_PERIOD_MS); 
     // }
+    I2c i2c{0, GPIO_NUM_8, GPIO_NUM_9};
+    Accelerometer accelerometer{i2c, 0x68, 0x04, 0x7E};
     Lidar lidar{11, 12, 230400};
+
     DataExchanger dataExchanger("192.168.1.1", 3000, "your ssid", "your password");
-    dataExchanger.getLidarStartReceiveDataMethod(std::bind(&Lidar::receiveData, &lidar));
+    dataExchanger.getLidarReceiveDataMethod(std::bind(&Lidar::receiveData, &lidar));
+    dataExchanger.getAccelerometerReceiveDataMethod(std::bind(&Accelerometer::receivePackedData, &accelerometer));
     dataExchanger.lidarReceiveData();
     dataExchanger.startTcpClient();
 };
