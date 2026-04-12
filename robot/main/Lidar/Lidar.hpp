@@ -2,6 +2,7 @@
 
 #include "LidarFrame.hpp"
 #include "Uart/Uart.hpp"
+#include "DataExchanger/Packet.hpp"
 #include <cstdint>
 #include <chrono>
 
@@ -26,7 +27,7 @@ class Lidar {
         isReceiving = false;
     };
         
-    void startReceiving();
+    Packet receiveData();
     void stopReceiving();
 
     private:

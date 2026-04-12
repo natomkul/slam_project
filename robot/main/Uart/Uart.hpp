@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <driver/uart.h>
+#include "DataExchanger/Packet.hpp"
 
 /*
 Class to communicate rx and tx via uart.
@@ -33,6 +34,7 @@ class Uart{
     
     void transmit();
     void receive();
+    Packet receiveDataToSend();
 
     const int uart_buffer_size = (1024 * 2);
 
