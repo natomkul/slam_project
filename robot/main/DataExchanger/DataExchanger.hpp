@@ -12,15 +12,18 @@ public:
     DataExchanger(std::string serverIP, int port, std::string ssid, std::string password);
     ~DataExchanger() = default;
 
-    void getLidarStartReceiveDataMethod(std::function<Packet()> method);
+    void getLidarReceiveDataMethod(std::function<Packet()> method);
+    void getAccelerometerReceiveDataMethod(std::function<Packet()> method);
     std::function<Packet()> lidarReceiveData;
+    std::function<Packet()> accelerometerReceiveData;
 
     static void wifiEventHandler(void *event_handler_arg, esp_event_base_t event_base, int32_t event_id, void *event_data);
     void wifiConnection();
 
     void lidarTask(void* arg);
 
-    static void tcpSendTask(void* arg);
+    static void tcpSendLidarDataTask(void* arg);
+    static void tcpSendAccelerometerDataTask(void* arg);
     static void tcpRecieveTask(void* arg);
     int createSocketAndConnect();
     void startTcpClient();

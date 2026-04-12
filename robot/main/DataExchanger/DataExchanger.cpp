@@ -1,4 +1,5 @@
 #include "DataExchanger.hpp"
+#include "Uart/Uart.hpp"
 
 #include "esp_wifi.h"
 #include "esp_log.h"
@@ -35,8 +36,12 @@ DataExchanger::DataExchanger(std::string serverIP, int port, std::string ssid, s
     wifiConnection();
 };
 
-void DataExchanger::getLidarStartReceiveDataMethod(std::function<Packet()> method) {
+void DataExchanger::getLidarReceiveDataMethod(std::function<Packet()> method) {
     lidarReceiveData = method;
+}
+
+void DataExchanger::getAccelerometerReceiveDataMethod(std::function<Packet()> method) {
+    accelerometerReceiveData = method;
 }
 
 void DataExchanger::wifiEventHandler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data){
@@ -123,7 +128,7 @@ int DataExchanger::createSocketAndConnect()
     return sock;
 }
 
-void DataExchanger::tcpSendTask(void* arg)
+void DataExchanger::tcpSendLidarDataTask(void* arg)
 {
     auto* self = static_cast<DataExchanger*>(arg);
     int sock = self->sock;
@@ -131,12 +136,33 @@ void DataExchanger::tcpSendTask(void* arg)
     while (true)
     {
         Packet packet = self->lidarReceiveData();
-        int totalLen = packet.type == DataType::LIDAR ? packet.length : packet.length + 3;
 
-        int sent = send(sock, packet.packedData, totalLen, 0);
+        int sent = send(sock, packet.data, packet.length, 0);
         if (sent < 0)
         {
-            ESP_LOGE("TCP", "Send failed: errno %d", errno);
+            ESP_LOGE("TCP", "Lidar packet send failed: errno %d", errno);
+            break;
+        }
+
+        vTaskDelay(pdMS_TO_TICKS(50));
+    }
+
+    vTaskDelete(NULL);
+}
+
+void DataExchanger::tcpSendAccelerometerDataTask(void* arg)
+{
+    auto* self = static_cast<DataExchanger*>(arg);
+    int sock = self->sock;
+
+    while (true)
+    {
+        Packet packet = self->accelerometerReceiveData();
+
+        int sent = send(sock, packet.data, packet.length, 0);
+        if (sent < 0)
+        {
+            ESP_LOGE("TCP", "Accelerometer packet send failed: errno %d", errno);
             break;
         }
 
@@ -165,10 +191,12 @@ void DataExchanger::startTcpClient()
         socketAlive = true;
         ESP_LOGI(TAG, "Socket ready: %d", sock);
 
-        TaskHandle_t sendTaskHandle = nullptr;
+        TaskHandle_t sendLidarDataTaskHandle = nullptr;
+        TaskHandle_t sendAccelerometerDataTaskHandle = nullptr;
         //TaskHandle_t recvTaskHandle = nullptr;
 
-        xTaskCreate(tcpSendTask, "tcpSend", 4096, this, 5, &sendTaskHandle);
+        xTaskCreate(tcpSendLidarDataTask, "tcpSendLidarData", 4096, this, 5, &sendLidarDataTaskHandle);
+        xTaskCreate(tcpSendAccelerometerDataTask, "tcpSendAccelerometerData", 4096, this, 5, &sendAccelerometerDataTaskHandle);
         //xTaskCreate(tcpRecieveTask, "tcpRecv", 4096, (void*)sock, 5, &recvTaskHandle);
 
         while (socketAlive)
@@ -179,7 +207,8 @@ void DataExchanger::startTcpClient()
         ESP_LOGW(TAG, "Connection lost.");
 
         close(sock);
-        if (sendTaskHandle) vTaskDelete(sendTaskHandle);
+        if (sendLidarDataTaskHandle) vTaskDelete(sendLidarDataTaskHandle);
+        if (sendAccelerometerDataTaskHandle) vTaskDelete(sendAccelerometerDataTaskHandle);
         //if (recvTaskHandle) vTaskDelete(recvTaskHandle);
 
         vTaskDelay(pdMS_TO_TICKS(2000));

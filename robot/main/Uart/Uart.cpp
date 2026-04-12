@@ -24,5 +24,5 @@ Packet Uart::receiveDataToSend(){
     } else {
         length = 0;
     }
-    return Packet(DataType::LIDAR, length, data);
+    return Packet(data, length);
 }

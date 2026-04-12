@@ -3,6 +3,7 @@
 #include <driver/i2c_master.h>
 #include <atomic>
 #include "I2c/I2c.hpp"
+#include "DataExchanger/Packet.hpp"
 
 /*
 Gets data from accelerometer and converts it into packets, 
@@ -41,6 +42,7 @@ class Accelerometer {
     void calibrate();
     void startMeasuring();
     void getMeasurement();
+    Packet receivePackedData();
     AccelerometerData data;
 
     private:
