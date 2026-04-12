@@ -40,6 +40,10 @@ void Accelerometer::getMeasurement(){
 
 Packet Accelerometer::receivePackedData()
 {
+<<<<<<< HEAD
+=======
+    uint8_t packedData[22];
+>>>>>>> 4cf48147e334d99ed777f858921066bb569dcfcf
     packedData[0] = 0x00;
     packedData[1] = 0x00;
     std::memcpy(packedData + 2, &data, sizeof(AccelerometerData));
