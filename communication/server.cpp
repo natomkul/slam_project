@@ -11,6 +11,8 @@
 
 #include <arpa/inet.h>
 
+#include "RecvParser.h"
+
 #define BACKLOG 10
 #define PORT "3000"
 #define BUF_SIZE 100
@@ -117,35 +119,7 @@ int main()
 
     printf("Accepted socket fd = %d\n", cfd);
 
-    char buf[BUF_SIZE];
-    char msg[BUF_SIZE + 10];
-    int numbytes;
-    
-    while (true)
-    {
-        if ((numbytes = recv(cfd, buf, BUF_SIZE - 1, 0)) <= 0)
-        {
-            perror("server recv");
-            close(sfd);
-            close(cfd);
-            return -1;
-        }
-
-        buf[numbytes] = '\0';
-    
-        printf("message [%d]:\n%s\n", numbytes, buf);
-    
-        snprintf(msg, sizeof(msg), "echo: %s", buf);
-
-        if (send(cfd, msg, strlen(msg), 0) == -1)
-        {
-            perror("server send");
-            
-            close(sfd);
-            close(cfd);
-            return -1;
-        }
-    }
+    PayloadRecv(cfd, sfd);
 
     close(cfd);
     close(sfd);
