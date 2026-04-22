@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Led.hpp"
+#include "Pwm/Pwm.hpp"
 #include <map>
 
 /*
@@ -9,7 +10,7 @@ Stores multiple LEDs inside and allows [] access to them.
 
 class Leds{
     public:
-    Leds(){
+    Leds(Pwm& pwm) : pwm(pwm){
         
     };
     ~Leds() = default;
@@ -22,4 +23,5 @@ class Leds{
 
     private:
     std::map<gpio_num_t, Led> leds;
+    Pwm& pwm;
 };

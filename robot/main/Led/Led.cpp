@@ -3,30 +3,35 @@
 #include <thread>
 #include <chrono>
 
+#include "freertos/FreeRTOS.h"
+
 void Led::on(){
-    gpio_set_level(portNumber, HIGH);
-    // if(gpio_set_level(portNumber, HIGH) != 0){
-    //     printf("Error!\n");
-    // }
+    changeDuty(255);
 }
 
 void Led::off(){
-    gpio_set_level(portNumber, LOW);
-    // if(gpio_set_level(portNumber, LOW) != 0){
-    //      printf("Error!\n");
-    // }
+    changeDuty(0);
 }
 
 void Led::blinkOn(){
-    blinkingState = ON;
-    while(blinkingState){
-        on();
-        std::this_thread::sleep_for(std::chrono::milliseconds(1000/blinkFrequency));
-        off();
-        std::this_thread::sleep_for(std::chrono::milliseconds(1000/blinkFrequency));
-    }
+    std::thread th([&](){    isBlinking = true;
+    while(isBlinking){
+        changeDuty(255);
+        vTaskDelay(1000/portTICK_PERIOD_MS); 
+        changeDuty(0);
+        vTaskDelay(1000/portTICK_PERIOD_MS); 
+    }});
+    th.detach();
 }
 
 void Led::blinkOff(){
-    blinkingState = OFF;
+    isBlinking = true;
+}
+
+void Led::changeDuty(uint32_t duty){
+    pwm[portNumber].changeDuty(duty);
+}
+
+void Led::changeFrequency(uint32_t frequency){
+    pwm[portNumber].changeFrequency(frequency);
 }

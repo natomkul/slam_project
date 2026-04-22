@@ -22,13 +22,13 @@ class I2c{
 
     private:
     const uint16_t address;
+    const i2c_port_num_t i2cPort;
+    const gpio_num_t sdaPortNumber;
+    const gpio_num_t sclPortNumber;
     std::vector<std::shared_ptr<I2cSlave>> slaves;
     esp_err_t esp_ret;
     i2c_master_bus_handle_t bus;
 
-    const i2c_port_num_t i2cPort;
-    const gpio_num_t sdaPortNumber;
-    const gpio_num_t sclPortNumber;
 
     void setUpMaster();
 };
