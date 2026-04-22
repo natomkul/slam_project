@@ -17,9 +17,8 @@ Controls single LED
 
 class Led {
     public:
-    Led(gpio_num_t portNumber, uint32_t blinkFrequency) :
-    portNumber(portNumber),
-    blinkFrequency(blinkFrequency)
+    Led(gpio_num_t portNumber) :
+    portNumber(portNumber)
     {
         gpio_config_t config;
         config.intr_type = GPIO_INTR_DISABLE;
@@ -41,7 +40,6 @@ class Led {
 
     private:
     const gpio_num_t portNumber;
-    const uint32_t blinkFrequency;
-
+    uint32_t blinkFrequency = 2;
     BlinkingState blinkingState = OFF;
 };

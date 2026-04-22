@@ -5,13 +5,14 @@
 #include "driver/gpio.h"
 
 class Motors{
+    public:
     Motors() = default;
     ~Motors() = default;
 
     Motor operator[](gpio_num_t portNumber){
         return motors.at(portNumber);
     }
-
+    
     void addMotor(gpio_num_t);
     
     private:

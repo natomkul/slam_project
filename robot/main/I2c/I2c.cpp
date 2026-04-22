@@ -7,7 +7,7 @@ void I2c::setUpMaster(){
         .sda_io_num = sdaPortNumber,
         .scl_io_num = sclPortNumber,
         .clk_source = I2C_CLK_SRC_DEFAULT,
-        .glitch_ignore_cnt = glitchIgnoreCount,
+        .glitch_ignore_cnt = 5,
         .intr_priority = 0,
         .trans_queue_depth = 4,
         .flags = {

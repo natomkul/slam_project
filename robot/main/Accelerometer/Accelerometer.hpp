@@ -24,32 +24,26 @@ struct AccelerometerData {
 };
 class Accelerometer {
     public:
-    Accelerometer(I2c& i2c, const uint8_t i2cAddress, const uint8_t dataRegister, const uint8_t cmdRegister) :
-    i2c(i2c),
-    i2cAddress(i2cAddress),
-    dataRegister(dataRegister),
-    cmdRegister(cmdRegister)
+    Accelerometer(I2c& i2c) : i2c(i2c)
     {
         initializeI2c();
     };
-    ~Accelerometer(){
+    ~Accelerometer()
+    {
         isMeasuring = false;
     };
 
-    void initializeI2c();
-    void calibrate();
+    AccelerometerData data;
+
     void startMeasuring();
     void getMeasurement();
-    AccelerometerData data;
 
     private:
     I2c& i2c;
     bool isMeasuring = false;
-    std::shared_ptr<I2cSlave> slave;
     uint8_t buffer[20];
-    const uint8_t startupCommands[3] = {0xB6, 0x11, 0x15}; 
-    const uint8_t startupCommandsSize = 3;
-    const uint8_t i2cAddress;
-    const uint8_t dataRegister;
-    const uint8_t cmdRegister;
+    std::shared_ptr<I2cSlave> slave;
+
+    void initializeI2c();
+    void calibrate();
 };

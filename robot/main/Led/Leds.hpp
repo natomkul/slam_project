@@ -3,8 +3,6 @@
 #include "Led.hpp"
 #include <map>
 
-#define DEFAULT_LED_BLINK_FREQUENCY 2
-
 /*
 Stores multiple LEDs inside and allows [] access to them.
 */
@@ -20,7 +18,7 @@ class Leds{
         return leds.at(portNumber);
     }
 
-    void addLed(gpio_num_t portNumber, uint32_t frequency);
+    void addLed(gpio_num_t portNumber);
 
     private:
     std::map<gpio_num_t, Led> leds;

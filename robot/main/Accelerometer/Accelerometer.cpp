@@ -2,13 +2,22 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
+namespace{
+#define i2cAddress 0x68 
+#define cmdRegister 0x7E
+#define dataRegister 0x04
+}
+
 void Accelerometer::initializeI2c(){
     slave = i2c.createSlave(i2cAddress);
 }
 
 void Accelerometer::calibrate(){
-    for(int i = 0; i < startupCommandsSize; i++){
-        uint8_t currentReg[2] = {cmdRegister, startupCommands[i]};
+    constexpr uint8_t calibrateCommands[3] = {0xB6, 0x11, 0x15}; 
+    constexpr uint8_t calibrateCommandsSize = 3;
+
+    for(int i = 0; i < calibrateCommandsSize; i++){
+        uint8_t currentReg[2] = {cmdRegister, calibrateCommands[i]};
         i2c.transmit(slave, cmdRegister, currentReg, 2);
         vTaskDelay(200 / portTICK_PERIOD_MS);
     }
@@ -24,7 +33,7 @@ void Accelerometer::startMeasuring(){
 }
 
 void Accelerometer::getMeasurement(){
-    i2c.transmitReceive(slave, 0x04, buffer, 20);
+    i2c.transmitReceive(slave, dataRegister, buffer, 20);
 
     data.magnitudeX = (buffer[0] << 8) | buffer[1];
     data.magnitudeY = (buffer[2] << 8) | buffer[3];
