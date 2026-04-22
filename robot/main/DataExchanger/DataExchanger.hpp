@@ -38,4 +38,6 @@ private:
     std::string ssid;
     std::string password;
     bool socketAlive{false};
+
+    SemaphoreHandle_t sendMutex;
 };

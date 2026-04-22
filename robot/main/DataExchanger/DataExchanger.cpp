@@ -32,7 +32,8 @@ EventGroupHandle_t wifi_event_group;
 DataExchanger::DataExchanger(std::string serverIP, int port, std::string ssid, std::string password) 
     : serverIP(serverIP), port(port), ssid(ssid), password(password)
 {
-    sendQueue = xQueueCreate(10, sizeof(Packet));
+    //sendQueue = xQueueCreate(10, sizeof(Packet));
+    sendMutex = xSemaphoreCreateMutex();
     wifiConnection();
 };
 
@@ -131,17 +132,20 @@ int DataExchanger::createSocketAndConnect()
 void DataExchanger::tcpSendLidarDataTask(void* arg)
 {
     auto* self = static_cast<DataExchanger*>(arg);
-    int sock = self->sock;
 
     while (true)
     {
         Packet packet = self->lidarReceiveData();
 
-        int sent = send(sock, packet.data, packet.length, 0);
-        if (sent < 0)
-        {
-            ESP_LOGE("TCP", "Lidar packet send failed: errno %d", errno);
-            break;
+        if (xSemaphoreTake(self->sendMutex, portMAX_DELAY) == pdTRUE){
+            int sent = send(self->sock, packet.data, packet.length, 0);
+            xSemaphoreGive(self->sendMutex);
+
+            if (sent < 0){
+                ESP_LOGE("TCP", "Lidar packet send failed: errno %d", errno);
+                self->socketAlive = false;
+                break;
+            }
         }
 
         vTaskDelay(pdMS_TO_TICKS(50));
@@ -153,17 +157,20 @@ void DataExchanger::tcpSendLidarDataTask(void* arg)
 void DataExchanger::tcpSendAccelerometerDataTask(void* arg)
 {
     auto* self = static_cast<DataExchanger*>(arg);
-    int sock = self->sock;
 
     while (true)
     {
         Packet packet = self->accelerometerReceiveData();
 
-        int sent = send(sock, packet.data, packet.length, 0);
-        if (sent < 0)
-        {
-            ESP_LOGE("TCP", "Accelerometer packet send failed: errno %d", errno);
-            break;
+        if (xSemaphoreTake(self->sendMutex, portMAX_DELAY) == pdTRUE){
+            int sent = send(self->sock, packet.data, packet.length, 0);
+            xSemaphoreGive(self->sendMutex);
+
+            if (sent < 0){
+                ESP_LOGE("TCP", "Accelerometer packet send failed: errno %d", errno);
+                self->socketAlive = false;
+                break;
+            }
         }
 
         vTaskDelay(pdMS_TO_TICKS(50));
