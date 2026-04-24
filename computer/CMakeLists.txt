@@ -7,7 +7,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # main
 set(SOURCES
-    server.cpp
+    main.cpp
 )
 
 # automatyczne zbieranie cpp z communication/

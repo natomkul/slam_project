@@ -36,8 +36,15 @@ bool AccelData::AccelRecv()
     if ((recv(cfd, &buf, Acc_DATA_SIZE, 0)) <= 0)
     {
         perror("Accel recv");
+#ifdef _WIN32
+        closesocket(cfd);
+        closesocket(sfd);
+
+        WSACleanup();
+#else
         close(cfd);
         close(sfd);
+#endif
         return false;
     }
     

@@ -37,8 +37,15 @@ bool LidarData::LidarRecv()
     if ((recv(cfd, &buf, Li_DATA_SIZE, 0)) <= 0)
     {
         perror("Lidar recv");
+#ifdef _WIN32
+        closesocket(cfd);
+        closesocket(sfd);
+
+        WSACleanup();
+#else
         close(cfd);
         close(sfd);
+#endif
         return false;
     }
     
