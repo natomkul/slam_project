@@ -10,9 +10,9 @@ void AccelData::printAccel()
     printf("===== ACCEL DATA =====\n");
 
     printf("Magnetometer:\n");
-    printf("  mx: %u\n", mx);
-    printf("  my: %u\n", my);
-    printf("  mz: %u\n", mz);
+    printf("  mx: %d\n", mx);
+    printf("  my: %d\n", my);
+    printf("  mz: %d\n", mz);
 
     printf("  rhall: %d\n", rhall);
 
@@ -31,7 +31,7 @@ void AccelData::printAccel()
 
 bool AccelData::AccelRecv()
 {
-    uint16_t buf[Acc_DATA_SIZE];
+    uint8_t buf[Acc_DATA_SIZE];
 
 
 #ifdef _WIN32
@@ -45,8 +45,8 @@ bool AccelData::AccelRecv()
 
         WSACleanup();
 #else
-     if ((recv(cfd, &buf, sizeof(buf), 0)) <= 0)
-     {
+    if ((recv(cfd, &buf, sizeof(buf), 0)) <= 0)
+    {
         perror("Accel recv");
         close(cfd);
         close(sfd);
