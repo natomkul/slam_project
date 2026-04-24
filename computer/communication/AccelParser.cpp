@@ -1,6 +1,6 @@
 #include "AccelParser.h"
 
-AccelData::AccelData(int cfd, int sfd) : cfd(cfd), sfd(sfd)
+AccelData::AccelData(socket_t cfd, socket_t sfd) : cfd(cfd), sfd(sfd)
 {
     output = AccelRecv();
 }
@@ -33,15 +33,21 @@ bool AccelData::AccelRecv()
 {
     uint16_t buf[Acc_DATA_SIZE];
 
-    if ((recv(cfd, &buf, Acc_DATA_SIZE, 0)) <= 0)
-    {
-        perror("Accel recv");
+
 #ifdef _WIN32
+    int ret = recv(cfd, (char*)buf, sizeof(buf), 0);
+
+    if (ret <= 0)
+    {
+        printf("Accel recv error: %d\n", WSAGetLastError());
         closesocket(cfd);
         closesocket(sfd);
 
         WSACleanup();
 #else
+     if ((recv(cfd, &buf, sizeof(buf), 0)) <= 0)
+     {
+        perror("Accel recv");
         close(cfd);
         close(sfd);
 #endif

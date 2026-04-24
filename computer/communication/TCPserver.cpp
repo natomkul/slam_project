@@ -4,7 +4,10 @@ TCPserver::TCPserver(const char* PORT) : PORT(PORT), sfd(-1), cfd(-1)
 {
 #ifdef _WIN32
     WSADATA wsa;
-    WSAStartup(MAKEWORD(2,2), &wsa);
+    if (WSAStartup(MAKEWORD(2,2), &wsa) != 0)
+    {
+        printf("WSAStartup failed\n");
+    };
 #endif
 }
 
@@ -60,9 +63,9 @@ bool TCPserver::connectSock()
             continue;
         }
 
-        printf("Server socket = %d\n", sfd);
+        printf("Server socket\n");
 
-        if (setsockopt(sfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1)
+        if (setsockopt(sfd, SOL_SOCKET, SO_REUSEADDR, (const char*) & yes, sizeof(int)) == -1)
         {
             perror("setsockopt");
             return false;
@@ -117,7 +120,7 @@ bool TCPserver::connectSock()
         return false;
     }
 
-    printf("Accepted socket fd = %d\n", cfd);
+    printf("Accepted socket\n");
 
     return true;
 }
@@ -128,15 +131,20 @@ bool TCPserver::receiveData()
     {
         uint8_t type;
 
-        if ((recv(cfd, &type, sizeof(uint8_t), 0)) <= 0)
-        {
-            perror("type recv");
 #ifdef _WIN32
+        int ret = recv(cfd, (char*)&type, sizeof(type), 0);
+
+        if (ret <= 0)
+        {
+            printf("Lidar recv error: %d\n", WSAGetLastError());
             closesocket(cfd);
             closesocket(sfd);
 
             WSACleanup();
 #else
+        if ((recv(cfd, &type, sizeof(uint8_t), 0)) <= 0)
+        {
+            perror("type recv");
             close(cfd);
             close(sfd);
 #endif

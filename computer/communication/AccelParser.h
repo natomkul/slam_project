@@ -43,7 +43,7 @@ class AccelData
     socket_t cfd, sfd;
     bool output;
  public:
-    AccelData() = delete;
+    //AccelData();
     AccelData(socket_t cfd, socket_t sfd);
     
     void printAccel();

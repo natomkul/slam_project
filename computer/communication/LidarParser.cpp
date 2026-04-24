@@ -1,6 +1,6 @@
 #include "LidarParser.h"
 
-LidarData::LidarData(int cfd, int sfd) : cfd(cfd), sfd(sfd)
+LidarData::LidarData(socket_t cfd, socket_t sfd) : cfd(cfd), sfd(sfd)
 {
     output = LidarRecv();
 }
@@ -34,15 +34,20 @@ bool LidarData::LidarRecv()
 {
     uint8_t buf[Li_DATA_SIZE];
 
-    if ((recv(cfd, &buf, Li_DATA_SIZE, 0)) <= 0)
-    {
-        perror("Lidar recv");
 #ifdef _WIN32
+     int ret = recv(cfd, (char*)buf, sizeof(buf), 0);
+
+     if (ret <= 0)
+     {
+        printf("Lidar recv error: %d\n", WSAGetLastError());
         closesocket(cfd);
         closesocket(sfd);
 
         WSACleanup();
 #else
+     if ((recv(cfd, &buf, Li_DATA_SIZE, 0)) <= 0)
+     {
+        perror("Lidar recv");
         close(cfd);
         close(sfd);
 #endif
