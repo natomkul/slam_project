@@ -15,21 +15,17 @@ into packages that can be sent further.
 
 class Lidar {
     public:
-    Uart uart;
-    const uint16_t bufferSize = 2048;
-    uint8_t data[2048];
-    uint8_t size;
-    int length;
-
-    Lidar(uint16_t TxPin, uint16_t RxPin, int baudRate) : uart{TxPin, RxPin, baudRate, data, 2048, length}{};
+    Lidar(uint16_t TxPin, uint16_t RxPin, int baudRate) : uart{TxPin, RxPin, baudRate, data, 2048}{};
     ~Lidar(){
         isReceiving = false;
     };
-        
-    void startReceiving();
-    void stopReceiving();
 
+    uint8_t data[2048];
+
+    int receiveData();
+    
     private:
+    Uart uart;
     bool isReceiving = false;
     uint sleepTime = 10;
 

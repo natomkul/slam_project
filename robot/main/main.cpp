@@ -11,6 +11,8 @@
 #include "Robot/Robot.hpp"
 #include "Motor/Motors.hpp"
 #include "Pwm/Pwm.hpp"
+#include "DataExchanger/DataExchanger.hpp"
+
 
 extern "C" {
     void app_main(void);
@@ -21,42 +23,29 @@ extern "C" {
 void app_main()
 {
     
-    vTaskDelay(sleep_time * 10/portTICK_PERIOD_MS); 
+    vTaskDelay(sleep_time * 20/portTICK_PERIOD_MS); 
     printf("\nstart\n");
-    // I2c i2c{0, 0, GPIO_NUM_8, GPIO_NUM_9};
-    Pwm pwm{5000};
 
-    // Accelerometer accelerometer{i2c};
-    Leds leds{pwm};
-    // Lidar lidar{11, 12, 230400};
-    // Motors motors;
+    static I2c i2c{0, 0, GPIO_NUM_8, GPIO_NUM_9};
+    static Accelerometer accelerometer{i2c};
+    static Lidar lidar{11, 12, 230400};
+    static DataExchanger dataExchanger("192.168.88.38", 3000, "WZnet_BUR", "piwc4321");
+    
+    dataExchanger.appendToSending(std::bind(&Lidar::receiveData, &lidar), lidar.data);
 
-    // Robot robot{accelerometer, leds, lidar, motors};
+    vTaskDelay(sleep_time * 20/portTICK_PERIOD_MS); 
 
-
-
-    leds.addLed(GPIO_NUM_6);
-    leds[GPIO_NUM_6].on();
-    leds.addLed(GPIO_NUM_7);
-    leds[GPIO_NUM_7].blinkOn();
-
+    printf("start tcpClient");
+    dataExchanger.startTcpClient();
 
     while(true){
-        printf("smth\n");
-        vTaskDelay(sleep_time * 10/portTICK_PERIOD_MS); 
-    }
-    // std::thread t1(&Accelerometer::startMeasuring, accelerometer);
-    // std::thread t2(&Lidar::startReceiving, lidar);
-
-    // uint length;
-    // while(true){
-    //     printf("measurement start\n");
-    //     length = lidar.length;
-    //     for (int i = 0; i < length; i++) {
-    //         printf("%02X ", lidar.data[i]);
-    //     }
-    //     printf("\n");
-    //     printf("measurement end\n");
-    //     vTaskDelay(sleep_time * 10/portTICK_PERIOD_MS); 
-    // }
+        printf("before lidar grab data\n");
+        // int length = lidar.receiveData();
+        // printf("length = %d\n", length);
+        // for(int i = 0; i < length; i++){
+        //     printf("%x ", lidar.data[i]);
+        // }
+        printf("\n");
+        vTaskDelay(sleep_time * 10/portTICK_PERIOD_MS);    
+    };
 };

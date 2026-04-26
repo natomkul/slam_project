@@ -10,18 +10,19 @@ which can be sent further. Packages are needed because this
 is raw data afaik.
 */
 
-struct AccelerometerData {
-    int16_t magnitudeX;
-    int16_t magnitudeY;
-    int16_t magnitudeZ;
-    int16_t rhall;
-    int16_t gyroscopeX;
-    int16_t gyroscopeY;
-    int16_t gyroscopeZ;
-    int16_t accelerationX;
-    int16_t accelerationY;
-    int16_t accelerationZ;
-};
+// struct data {
+//     uint8_t header{0x67};
+//     int16_t magnitudeX;
+//     int16_t magnitudeY;
+//     int16_t magnitudeZ;
+//     int16_t rhall;
+//     int16_t gyroscopeX;
+//     int16_t gyroscopeY;
+//     int16_t gyroscopeZ;
+//     int16_t accelerationX;
+//     int16_t accelerationY;
+//     int16_t accelerationZ;
+// };
 class Accelerometer {
     public:
     Accelerometer(I2c& i2c) : i2c(i2c)
@@ -33,15 +34,14 @@ class Accelerometer {
         isMeasuring = false;
     };
 
-    AccelerometerData data;
+    uint8_t data[21];
 
-    void startMeasuring();
-    void getMeasurement();
+    int getMeasurement();
 
     private:
     I2c& i2c;
     bool isMeasuring = false;
-    uint8_t buffer[20];
+    uint8_t receiveBuffer[20];
     std::shared_ptr<I2cSlave> slave;
 
     void initializeI2c();
