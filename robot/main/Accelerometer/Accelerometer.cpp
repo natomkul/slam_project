@@ -23,7 +23,7 @@ void Accelerometer::calibrate(){
     }
 }
 
-int Accelerometer::getMeasurement(){
+int Accelerometer::receiveData(){
     i2c.transmitReceive(slave, dataRegister, receiveBuffer, 20);
     for(int i = 1; i < 21; i++){
         data[i] = receiveBuffer[i - 1];

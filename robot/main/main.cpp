@@ -17,35 +17,30 @@
 extern "C" {
     void app_main(void);
 }
-    const uint32_t sleep_time = 200;
 
 
 void app_main()
 {
     
-    vTaskDelay(sleep_time * 20/portTICK_PERIOD_MS); 
-    printf("\nstart\n");
+    vTaskDelay(5000/portTICK_PERIOD_MS); 
+    printf("\n---initialize device---\n");
 
     static I2c i2c{0, 0, GPIO_NUM_8, GPIO_NUM_9};
     static Accelerometer accelerometer{i2c};
     static Lidar lidar{11, 12, 230400};
-    static DataExchanger dataExchanger("192.168.88.38", 3000, "WZnet_BUR", "piwc4321");
+    static DataExchanger dataExchanger("10.170.219.13", 3000, "realme 9 Pro+", "c4i39885");
     
     dataExchanger.appendToSending(std::bind(&Lidar::receiveData, &lidar), lidar.data);
+    dataExchanger.appendToSending(std::bind(&Accelerometer::receiveData, &accelerometer), accelerometer.data);
 
-    vTaskDelay(sleep_time * 20/portTICK_PERIOD_MS); 
+    vTaskDelay(5000/portTICK_PERIOD_MS); 
 
-    printf("start tcpClient");
+    printf("\n---start tcp client---\n");
+
     dataExchanger.startTcpClient();
 
     while(true){
-        printf("before lidar grab data\n");
-        // int length = lidar.receiveData();
-        // printf("length = %d\n", length);
-        // for(int i = 0; i < length; i++){
-        //     printf("%x ", lidar.data[i]);
-        // }
-        printf("\n");
-        vTaskDelay(sleep_time * 10/portTICK_PERIOD_MS);    
+        printf("---\n");
+        vTaskDelay(5000/portTICK_PERIOD_MS);  
     };
 };

@@ -15,7 +15,6 @@ DataExchanger::DataExchanger(const std::string ip, const uint16_t port, const st
 : ip(ip), port(port), ssid(ssid), password(password)
 {
     wifi_event_group = xEventGroupCreateStatic(&wifi_event_group_buffer);
-    // sendMutex = xSemaphoreCreateMutex();
     connectToWifi();
 }
 
@@ -167,6 +166,7 @@ void DataExchanger::startTcpClient(){
         }
     }
 }
+
 void DataExchanger::appendToSending(std::function<int()> method, uint8_t* bufferPointer){
     sendingVector.push_back({method, bufferPointer});
 }

@@ -2,21 +2,31 @@
 
 #include <cstdint>
 
+enum Event {
+    clockwise,
+    counterclockwise
+};
+
+// 7ppr
+/*
+Class having two channels connected to encoders. Store events to some buffer,
+that will be further send to computer.
+*/
 class Encoder{
-    // 7ppr
-    // add connecting to a pin that sends encoder information
-    Encoder(uint16_t ppr, uint16_t wheelDiameterInMM): ppr(ppr), wheelDiameterInMM(wheelDiameterInMM){
+    public:
+    Encoder(const uint16_t ppr, const gpio_num_t channelA, const gpio_num_t channelB):
+    ppr(ppr), channelA(channelA),channelB(channelB)
+    {
 
     }
     ~Encoder(){
 
     };
 
-    void trackDistance();
-
-    int64_t distanceTravelledInMM{0};
-    
     private:
     const uint16_t ppr; // pulses per revolution
-    const uint16_t wheelDiameterInMM;
+    const gpio_num_t channelA;
+    const gpio_num_t channelB;
 };
+
+

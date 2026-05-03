@@ -36,7 +36,7 @@ class Accelerometer {
 
     uint8_t data[21];
 
-    int getMeasurement();
+    int receiveData();
 
     private:
     I2c& i2c;

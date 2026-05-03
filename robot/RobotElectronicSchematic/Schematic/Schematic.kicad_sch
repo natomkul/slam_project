@@ -3540,7 +3540,7 @@
 	)
 	(wire
 		(pts
-			(xy 144.78 128.27) (xy 144.78 135.89)
+			(xy 144.78 102.87) (xy 144.78 135.89)
 		)
 		(stroke
 			(width 0)
@@ -3860,16 +3860,6 @@
 	)
 	(wire
 		(pts
-			(xy 128.27 147.32) (xy 128.27 133.35)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "cb32987d-b48e-4ed8-b437-ff2cc16252a4")
-	)
-	(wire
-		(pts
 			(xy 157.48 167.64) (xy 157.48 177.8)
 		)
 		(stroke
@@ -3920,7 +3910,7 @@
 	)
 	(wire
 		(pts
-			(xy 142.24 128.27) (xy 142.24 138.43)
+			(xy 142.24 102.87) (xy 142.24 138.43)
 		)
 		(stroke
 			(width 0)
@@ -6123,7 +6113,7 @@
 	)
 	(symbol
 		(lib_id "MCU_Espressif:ESP32-S3")
-		(at 142.24 90.17 180)
+		(at 142.24 64.77 180)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -6132,7 +6122,7 @@
 		(fields_autoplaced yes)
 		(uuid "def002d4-935b-464c-bb83-f6d92a3ef421")
 		(property "Reference" "U1"
-			(at 145.3581 49.53 0)
+			(at 145.3581 24.13 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -6141,7 +6131,7 @@
 			)
 		)
 		(property "Value" "ESP32-S3"
-			(at 145.3581 52.07 0)
+			(at 145.3581 26.67 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -6150,7 +6140,7 @@
 			)
 		)
 		(property "Footprint" "Package_DFN_QFN:QFN-56-1EP_7x7mm_P0.4mm_EP4x4mm"
-			(at 142.24 41.91 0)
+			(at 142.24 16.51 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -6159,7 +6149,7 @@
 			)
 		)
 		(property "Datasheet" "https://www.espressif.com/sites/default/files/documentation/esp32-s3_datasheet_en.pdf"
-			(at 142.24 90.17 0)
+			(at 142.24 64.77 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -6168,7 +6158,7 @@
 			)
 		)
 		(property "Description" "Microcontroller, Wi-Fi 802.11b/g/n, Bluetooth, 32bit"
-			(at 142.24 90.17 0)
+			(at 142.24 64.77 0)
 			(effects
 				(font
 					(size 1.27 1.27)
