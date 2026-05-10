@@ -16,4 +16,11 @@ idf_component_register(SRCS
     REQUIRES esp_driver_i2c
     REQUIRES esp_driver_gpio
     REQUIRES esp_driver_ledc
+    REQUIRES esp_wifi
+    REQUIRES esp_http_server
+    REQUIRES esp_http_client
+    REQUIRES esp_eth
+    REQUIRES esp_event
+    REQUIRES nvs_flash
+    REQUIRES esp_timer
     INCLUDE_DIRS ".")

@@ -5,6 +5,9 @@
 #include <map>
 #include "PwmChannel.hpp"
 
+/*
+Controls pwm and allows to add new channels.
+*/
 class Pwm{
     public:
     Pwm(uint32_t pwmFrequency)

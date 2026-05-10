@@ -11,52 +11,36 @@
 #include "Robot/Robot.hpp"
 #include "Motor/Motors.hpp"
 #include "Pwm/Pwm.hpp"
+#include "DataExchanger/DataExchanger.hpp"
+
 
 extern "C" {
     void app_main(void);
 }
-    const uint32_t sleep_time = 200;
 
 
 void app_main()
 {
     
-    vTaskDelay(sleep_time * 10/portTICK_PERIOD_MS); 
-    printf("\nstart\n");
-    // I2c i2c{0, 0, GPIO_NUM_8, GPIO_NUM_9};
-    Pwm pwm{5000};
+    vTaskDelay(5000/portTICK_PERIOD_MS); 
+    printf("\n---initialize device---\n");
 
-    // Accelerometer accelerometer{i2c};
-    Leds leds{pwm};
-    // Lidar lidar{11, 12, 230400};
-    // Motors motors;
+    static I2c i2c{0, 0, GPIO_NUM_8, GPIO_NUM_9};
+    static Accelerometer accelerometer{i2c};
+    static Lidar lidar{11, 12, 230400};
+    static DataExchanger dataExchanger("10.170.219.13", 3000, "realme 9 Pro+", "c4i39885");
+    
+    dataExchanger.appendToSending(std::bind(&Lidar::receiveData, &lidar), lidar.data);
+    dataExchanger.appendToSending(std::bind(&Accelerometer::receiveData, &accelerometer), accelerometer.data);
 
-    // Robot robot{accelerometer, leds, lidar, motors};
+    vTaskDelay(5000/portTICK_PERIOD_MS); 
 
+    printf("\n---start tcp client---\n");
 
-
-    leds.addLed(GPIO_NUM_6);
-    leds[GPIO_NUM_6].on();
-    leds.addLed(GPIO_NUM_7);
-    leds[GPIO_NUM_7].blinkOn();
-
+    dataExchanger.startTcpClient();
 
     while(true){
-        printf("smth\n");
-        vTaskDelay(sleep_time * 10/portTICK_PERIOD_MS); 
-    }
-    // std::thread t1(&Accelerometer::startMeasuring, accelerometer);
-    // std::thread t2(&Lidar::startReceiving, lidar);
-
-    // uint length;
-    // while(true){
-    //     printf("measurement start\n");
-    //     length = lidar.length;
-    //     for (int i = 0; i < length; i++) {
-    //         printf("%02X ", lidar.data[i]);
-    //     }
-    //     printf("\n");
-    //     printf("measurement end\n");
-    //     vTaskDelay(sleep_time * 10/portTICK_PERIOD_MS); 
-    // }
+        printf("---\n");
+        vTaskDelay(5000/portTICK_PERIOD_MS);  
+    };
 };

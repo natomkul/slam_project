@@ -9,7 +9,7 @@ Class to communicate rx and tx via uart.
 
 class Uart{
     public:
-    Uart(uint16_t TxPin, uint16_t RxPin, int baudRate, uint8_t* data, uint16_t dataSize, int& length) : data(data), dataSize(dataSize), length(length)
+    Uart(uint16_t TxPin, uint16_t RxPin, int baudRate, uint8_t* data, uint16_t dataSize) : data(data), dataSize(dataSize)
     {
         uart_config_t uart_config = {
             .baud_rate = baudRate,
@@ -32,15 +32,12 @@ class Uart{
     ~Uart() = default;
     
     void transmit();
-    void receive();
+    int receive();
 
     const int uart_buffer_size = (1024 * 2);
 
-
     uint8_t* data;
     uint16_t dataSize;
-
-    int& length; // of read data
 
     QueueHandle_t uart_queue;
     const uart_port_t uart_num = UART_NUM_2;

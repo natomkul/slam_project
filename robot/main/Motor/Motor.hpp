@@ -2,16 +2,26 @@
 
 #include <cstdint>
 #include <driver/gpio.h>
-
+#include "Motor/Encoder.hpp"
 #include "Pwm/Pwm.hpp"
 
 
 /*
-Class providing usage of motors via PWM. Should calculate
-speed based on wheel diameter and PWM given or smth. More data better.
+Class providing usage of single motor via PWM. Should calculate
+ticks needed based on wheel diameter and allow to move by certain distance.
 
 */
 class Motor {   
-    Motor(uint16_t diameterInMM, uint16_t rpm, gpio_num_t portNumber){};
+    public:
+    Motor(const gpio_num_t portNumber, const Encoder encoder,  const uint16_t wheelDiameterInMM, Pwm& pwm)
+    : portNumber(portNumber), encoder(encoder), wheelDiameterInMM(wheelDiameterInMM), pwm(pwm){
+        pwm.addChannel(portNumber, 0);
+    };
+    ~Motor(){};
     
+    private:
+    const gpio_num_t portNumber;
+    const Encoder encoder;
+    const uint16_t wheelDiameterInMM; // to estimate distance
+    Pwm& pwm;
 };
