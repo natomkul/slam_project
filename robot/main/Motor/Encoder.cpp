@@ -82,5 +82,5 @@ int Encoder::receiveData(){
     data[2]= (pulseCount & 0xFF00) >> 8; 
     data[3] = lastEvent;
 
-    return sideof(data);
+    return sizeof(data);
 }
