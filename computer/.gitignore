@@ -2,4 +2,9 @@ out
 a.out
 client
 NODES_AND_TOPICS
+mesgInterp
+SensorsNode.h
+build
+*.py
+
 

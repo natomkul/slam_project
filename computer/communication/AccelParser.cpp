@@ -10,34 +10,34 @@ void AccelData::printAccel()
     printf("===== ACCEL DATA =====\n");
 
     printf("Magnetometer:\n");
-    printf("  mx: %d\n", mx);
-    printf("  my: %d\n", my);
-    printf("  mz: %d\n", mz);
+    printf("  mx: %d\n", data.mx);
+    printf("  my: %d\n", data.my);
+    printf("  mz: %d\n", data.mz);
 
-    printf("  rhall: %d\n", rhall);
+    printf("  rhall: %d\n", data.rhall);
 
     printf("Gyroscope:\n");
-    printf("  gx: %u\n", gx);
-    printf("  gy: %u\n", gy);
-    printf("  gz: %u\n", gz);
+    printf("  gx: %u\n", data.gx);
+    printf("  gy: %u\n", data.gy);
+    printf("  gz: %u\n", data.gz);
 
     printf("Accelerometer:\n");
-    printf("  ax: %u\n", ax);
-    printf("  ay: %u\n", ay);
-    printf("  az: %u\n", az);
+    printf("  ax: %u\n", data.ax);
+    printf("  ay: %u\n", data.ay);
+    printf("  az: %u\n", data.az);
 
     printf("======================\n");
 }
 
 bool AccelData::AccelRecv()
 {
-    uint8_t buf[Acc_DATA_SIZE];
-
+    uint8_t buf[sizeof(AccData)];
+    int ret;
 
 #ifdef _WIN32
-    int ret = recv(cfd, (char*)buf, sizeof(buf), 0);
+    ret = recv(cfd, (char*)buf, sizeof(buf), 0);
 
-    if (ret <= 0)
+    if (ret < 0)
     {
         printf("Accel recv error: %d\n", WSAGetLastError());
         closesocket(cfd);
@@ -45,45 +45,51 @@ bool AccelData::AccelRecv()
 
         WSACleanup();
 #else
-    if ((recv(cfd, &buf, sizeof(buf), 0)) <= 0)
+    ret = recv(cfd, &buf, sizeof(buf), 0);
+    
+    if (ret  < 0)
     {
         perror("Accel recv");
         close(cfd);
         close(sfd);
 #endif
         return false;
+
+    } else if (ret == 0){
+
+        return true;
     }
     
     int offset = 0;
 
-    mx = buf[offset];
+    data.mx = buf[offset];
     offset += sizeof(uint16_t);
     
-    my = buf[offset];
+    data.my = buf[offset];
     offset += sizeof(uint16_t);
     
-    mz = buf[offset];
+    data.mz = buf[offset];
     offset += sizeof(uint16_t);
     
-    rhall = buf[offset];
+    data.rhall = buf[offset];
     offset += sizeof(uint16_t);
     
-    gx = buf[offset];
+    data.gx = buf[offset];
     offset += sizeof(uint16_t);
     
-    gy = buf[offset];
+    data.gy = buf[offset];
     offset += sizeof(uint16_t);
  
-    gz = buf[offset];
+    data.gz = buf[offset];
     offset += sizeof(uint16_t);
    
-    ax = buf[offset];
+    data.ax = buf[offset];
     offset += sizeof(uint16_t);
     
-    ay = buf[offset];
+    data.ay = buf[offset];
     offset += sizeof(uint16_t);
     
-    az = buf[offset];
+    data.az = buf[offset];
     offset += sizeof(uint16_t);
 
     printAccel();

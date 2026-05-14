@@ -4,6 +4,7 @@
 #include <cstring>
 #include <cstdio>
 #include <cstdlib>
+#include <cstdint>
 #include <string>
 
 #ifdef _WIN32
@@ -31,7 +32,6 @@
 #endif
 
 #define POINT_PER_PACK 12
-#define Li_DATA_SIZE sizeof(LidarData)
 
 struct LidarPoints
 {
@@ -39,9 +39,8 @@ struct LidarPoints
     uint8_t confidence;
 };
 
-class LidarData
+struct LiData
 {
- private:
     int8_t      dataLength;
     uint16_t    speed;
     uint16_t    startAngle;
@@ -49,6 +48,12 @@ class LidarData
     uint16_t    endAngle;
     uint16_t    timestamp;
     uint8_t     crc8;
+};
+
+class LidarData
+{
+ private:
+    LiData data;
 
     socket_t cfd, sfd;
     bool output;

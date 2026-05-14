@@ -130,11 +130,12 @@ bool TCPserver::receiveData()
     while (true)
     {
         uint8_t type;
+        int ret;
 
 #ifdef _WIN32
-        int ret = recv(cfd, (char*)&type, sizeof(type), 0);
+        ret = recv(cfd, (char*)&type, sizeof(type), 0);
 
-        if (ret <= 0)
+        if (ret < 0)
         {
             printf("Lidar recv error: %d\n", WSAGetLastError());
             closesocket(cfd);
@@ -142,7 +143,9 @@ bool TCPserver::receiveData()
 
             WSACleanup();
 #else
-        if ((recv(cfd, &type, sizeof(uint8_t), 0)) <= 0)
+        ret = recv(cfd, &type, sizeof(uint8_t), 0);
+
+        if (ret < 0)
         {
             perror("type recv");
             close(cfd);
@@ -150,6 +153,10 @@ bool TCPserver::receiveData()
 #endif
 
             return false;
+
+        } else if (ret == 0){
+
+            continue;
         }
 
         printf("recv data type: %d\n", type);
@@ -160,7 +167,7 @@ bool TCPserver::receiveData()
         {
             case LIDAR_TYPE: output = LidarHandl(); break;
             case ACCEL_TYPE: output = AccelHandl(); break;
-            default: return false;
+            default: continue;
         }
 
         if (!output)

@@ -9,78 +9,85 @@ void LidarData::printLidar()
 {
     printf("===== LIDAR PACKET =====\n");
 
-    printf("dataLength: %d\n", (int)dataLength);
-    printf("speed: %u\n", speed);
-    printf("startAngle: %u\n", startAngle);
+    printf("dataLength: %u\n", data.dataLength);
+    printf("speed: %u\n", data.speed);
+    printf("startAngle: %u\n", data.startAngle);
 
     printf("points:\n");
 
     for (int i = 0; i < POINT_PER_PACK; i++)
     {
-        printf("  [%d] dist=%u conf=%d\n",
+        printf("  [%d] dist=%u conf=%u\n",
                i,
-               point[i].distanceValue,
-               (int)point[i].confidence);
+               data.point[i].distanceValue,
+               data.point[i].confidence);
     }
 
-    printf("endAngle: %u\n", endAngle);
-    printf("timestamp: %u\n", timestamp);
-    printf("crc: %u\n", crc8);
+    printf("endAngle: %u\n", data.endAngle);
+    printf("timestamp: %u\n", data.timestamp);
+    printf("crc: %u\n", data.crc8);
     
     printf("========================\n");
 }
 
 bool LidarData::LidarRecv()
 {
-    uint8_t buf[Li_DATA_SIZE];
+    uint8_t buf[sizeof(data)];
+    int ret;
 
 #ifdef _WIN32
-     int ret = recv(cfd, (char*)buf, sizeof(buf), 0);
+    ret = recv(cfd, (char*)buf, sizeof(buf), 0);
 
-     if (ret <= 0)
-     {
+    if (ret < 0)
+    {
         printf("Lidar recv error: %d\n", WSAGetLastError());
         closesocket(cfd);
         closesocket(sfd);
 
         WSACleanup();
 #else
-     if ((recv(cfd, &buf, Li_DATA_SIZE, 0)) <= 0)
-     {
+    ret = recv(cfd, &buf, sizeof(data), 0);
+    
+    if (ret < 0)
+    {
         perror("Lidar recv");
         close(cfd);
         close(sfd);
 #endif
         return false;
+    
+    } else if (ret == 0) {
+    
+        return true;
     }
     
     int offset = 0;
 
-    dataLength = buf[offset];
+    data.dataLength = buf[offset];
     offset += sizeof(uint8_t);
 
-    speed = (uint16_t) buf[offset];
+    data.speed = (uint16_t) buf[offset];
     offset += sizeof(uint16_t);
 
-    startAngle = (uint16_t) buf[offset];
+    data.startAngle = (uint16_t) buf[offset];
     offset += sizeof(uint16_t);
 
     for (int i = 0; i < POINT_PER_PACK; i++)
     {
-        point[i].distanceValue = (uint16_t) buf[offset];
+        data.point[i].distanceValue = (uint16_t) buf[offset];
         offset += sizeof(uint16_t);
 
-        point[i].confidence = buf[offset];
+        data.point[i].confidence = buf[offset];
         offset += sizeof(uint8_t);
     }
 
-    endAngle = (uint16_t) buf[offset];
+    data.endAngle = (uint16_t) buf[offset];
     offset += sizeof(uint16_t);
 
-    timestamp = (uint16_t) buf[offset];
+    data.timestamp = (uint16_t) buf[offset];
     offset += sizeof(uint16_t);
     
-    uint8_t crc8 = buf[offset];
+    data.crc8 = buf[offset];
     
     printLidar();
 

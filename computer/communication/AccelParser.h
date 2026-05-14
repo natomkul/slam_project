@@ -4,6 +4,7 @@
 #include <cstring>
 #include <cstdio>
 #include <cstdlib>
+#include <cstdint>
 #include <string>
 
 #ifdef _WIN32
@@ -30,15 +31,18 @@
 
 #endif
 
-#define Acc_DATA_SIZE sizeof(AccelData)
-
-class AccelData
+struct AccData
 {
- private:
     int16_t mx, my, mz;
     int16_t rhall;
     int16_t gx, gy, gz;
     int16_t ax, ay, az;
+};
+
+class AccelData
+{
+ private:
+    AccData data;
 
     socket_t cfd, sfd;
     bool output;
