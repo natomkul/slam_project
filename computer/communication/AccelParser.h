@@ -53,4 +53,5 @@ class AccelData
     void printAccel();
     bool AccelRecv();
     bool get_output();
+    AccData get_data();
 };

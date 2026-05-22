@@ -101,3 +101,8 @@ bool AccelData::get_output()
 {
     return output;
 }
+
+AccData AccelData::get_data()
+{
+    return data;
+}

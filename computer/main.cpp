@@ -1,19 +1,19 @@
-#include "TCPserver.h"
+#include "SensorsNode.h"
 
 #define PORT "3000"
 
-int main()
+int main(int argc, char** argv)
 {
-    bool proc = true;
+    rclcpp::init(argc, argv);
 
-    TCPserver server(PORT);
-    
-    if (!server.connectSock())
-    {
-        return -1;
-    }
+    auto node = std::make_shared<SensorsNode>(PORT);
 
-    while(server.receiveData()) {}
+    node->start();   // 🔥 TCP thread start
 
+    rclcpp::spin(node);
+
+    node->stop();    // cleanup
+
+    rclcpp::shutdown();
     return 0;
 }

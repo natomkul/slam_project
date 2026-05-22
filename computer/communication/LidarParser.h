@@ -64,4 +64,5 @@ class LidarData
     void printLidar();
     bool LidarRecv();
     bool get_output();
+    LiData get_data();
 };

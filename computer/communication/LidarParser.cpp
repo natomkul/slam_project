@@ -98,3 +98,8 @@ bool LidarData::get_output()
 {
     return output;
 }
+
+LiData LidarData::get_data()
+{
+    return data;
+}

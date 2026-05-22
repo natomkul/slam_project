@@ -24,18 +24,18 @@ TCPserver::~TCPserver()
 #endif
 }
 
-bool TCPserver::AccelHandl()
+AccData TCPserver::AccelHandl()
 {
     AccelData data(cfd, sfd);
 
-    return data.get_output();
+    return data.get_data();
 }
 
-bool TCPserver::LidarHandl()
+LiData TCPserver::LidarHandl()
 {
     LidarData data(cfd, sfd);
 
-    return data.get_output();
+    return data.get_data();
 }
 
 bool TCPserver::connectSock()
@@ -125,55 +125,46 @@ bool TCPserver::connectSock()
     return true;
 }
 
-bool TCPserver::receiveData()
+TCPserver::FResult TCPserver::receiveData()
 {
-    while (true)
-    {
-        uint8_t type;
-        int ret;
+    uint8_t type;
+    int ret;
 
 #ifdef _WIN32
-        ret = recv(cfd, (char*)&type, sizeof(type), 0);
+    ret = recv(cfd, (char*)&type, sizeof(type), 0);
 
-        if (ret < 0)
-        {
-            printf("Lidar recv error: %d\n", WSAGetLastError());
-            closesocket(cfd);
-            closesocket(sfd);
-
-            WSACleanup();
+    if (ret < 0)
+    {
+        auto err = WSAGetLastError();
+        closesocket(cfd);
+        closesocket(sfd);
+        WSACleanup();
 #else
-        ret = recv(cfd, &type, sizeof(uint8_t), 0);
+    ret = recv(cfd, &type, sizeof(uint8_t), 0);
 
-        if (ret < 0)
-        {
-            perror("type recv");
-            close(cfd);
-            close(sfd);
+    if (ret < 0)
+    {
+        auto err = errno;
+        close(cfd);
+        close(sfd);
 #endif
 
-            return false;
+        return std::unexpected(
+            std::error_code(err, std::system_category())
+        );
 
-        } else if (ret == 0){
+    } else if (ret == 0){
+        
+        return Result{std::monostate{}};
+    }
 
-            continue;
-        }
+    printf("recv data type: %d\n", type);
 
-        printf("recv data type: %d\n", type);
-
-        bool output;
-
-        switch(type)
-        {
-            case LIDAR_TYPE: output = LidarHandl(); break;
-            case ACCEL_TYPE: output = AccelHandl(); break;
-            default: continue;
-        }
-
-        if (!output)
-        {
-            return false;
-        }
+    switch(type)
+    {
+        case LIDAR_TYPE: return Result{LidarHandl()};
+        case ACCEL_TYPE: return Result{AccelHandl()};
+        default: return Result{std::monostate{}};
     }
 }
 
