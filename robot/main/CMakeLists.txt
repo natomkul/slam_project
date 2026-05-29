@@ -22,4 +22,5 @@ idf_component_register(SRCS
     REQUIRES esp_eth
     REQUIRES esp_event
     REQUIRES nvs_flash
+    REQUIRES esp_timer
     INCLUDE_DIRS ".")

@@ -27,6 +27,7 @@ class Accelerometer {
     public:
     Accelerometer(I2c& i2c) : i2c(i2c)
     {
+        data[0] = 0x67;
         initializeI2c();
     };
     ~Accelerometer()
