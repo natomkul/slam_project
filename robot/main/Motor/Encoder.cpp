@@ -37,7 +37,7 @@ void Encoder::update()
     case 0b0111:
     case 0b1110:
     case 0b1000:
-        pulseCount++;
+        pulseCount.fetch_add(1);
         lastEvent = clockwise;
         break;
 
@@ -45,7 +45,7 @@ void Encoder::update()
     case 0b0100:
     case 0b1101:
     case 0b1011:
-        pulseCount--;
+        pulseCount.fetch_sub(1);
         lastEvent = counterclockwise;
         break;
     }
@@ -56,7 +56,7 @@ void Encoder::update()
 float Encoder::getRevolutions() const
 {
     const float countsPerRevolution = static_cast<float>(ppr) * 210.0 * 4.0;
-    return pulseCount / countsPerRevolution;
+    return pulseCount.load() / countsPerRevolution;
 }
 
 float Encoder::getDistanceInMeters() const
@@ -67,13 +67,18 @@ float Encoder::getDistanceInMeters() const
 
 void Encoder::reset()
 {
-    pulseCount = 0;
+    pulseCount.store(0);
+}
+
+int16_t Encoder::getPulseCount()
+{
+    return pulseCount.load();
 }
 
 int Encoder::receiveData()
 {
-    data[1] = pulseCount & 0xFF;
-    data[2] = (pulseCount & 0xFF00) >> 8;
+    data[1] = pulseCount.load() & 0xFF;
+    data[2] = (pulseCount.load() & 0xFF00) >> 8;
     data[3] = lastEvent;
 
     return sizeof(data);

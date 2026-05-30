@@ -16,7 +16,7 @@ public:
         return motors.at(motorNumber);
     }
 
-    void addMotor(const int motorNumber, Motor motor);
+    void addMotor(const int motorNumber, Motor &motor);
 
 private:
     std::map<int, Motor> motors;

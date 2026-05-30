@@ -5,7 +5,14 @@
 #include "Led/Leds.hpp"
 #include "Lidar/Lidar.hpp"
 #include "Motor/MotorManager.hpp"
-#include "State.hpp"
+
+enum State
+{
+    stopped,
+    connected,
+    running,
+    crashed
+};
 
 /*
 Class of robot itself.

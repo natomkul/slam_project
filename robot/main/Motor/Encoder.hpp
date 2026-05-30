@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <driver/gpio.h>
 #include <esp_timer.h>
+#include <atomic>
 
 enum Event
 {
@@ -10,7 +11,6 @@ enum Event
     counterclockwise
 };
 
-// 7ppr
 /*
 Class having two channels connected to encoders. Store events to some buffer,
 that will be further send to computer.
@@ -26,6 +26,7 @@ public:
     float getRevolutions() const;
     float getDistanceInMeters() const;
     float getVelocityInMpS();
+    int16_t getPulseCount();
     void reset();
 
     int receiveData();
@@ -38,7 +39,7 @@ private:
 
     uint8_t data[4];
 
-    int16_t pulseCount{0};
+    std::atomic<int16_t> pulseCount{0};
     uint8_t previousState{0};
     Event lastEvent{clockwise};
 };
