@@ -16,11 +16,8 @@ into packages that can be sent further.
 class Lidar
 {
 public:
-    Lidar(uint16_t TxPin, uint16_t RxPin, int baudRate) : uart{TxPin, RxPin, baudRate, data, 2048} {};
-    ~Lidar()
-    {
-        isReceiving = false;
-    };
+    Lidar(uint16_t TxPin, uint16_t RxPin, int baudRate);
+    ~Lidar();
 
     uint8_t data[2048];
 

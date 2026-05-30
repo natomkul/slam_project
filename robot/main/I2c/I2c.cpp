@@ -1,6 +1,14 @@
 #include "i2c.hpp"
 #include <memory>
 
+I2c::I2c(uint16_t address, i2c_port_num_t i2cPort, gpio_num_t sdaPortNumber, gpio_num_t sclPortNumber)
+    : address(address), i2cPort(i2cPort), sdaPortNumber(sdaPortNumber), sclPortNumber(sclPortNumber)
+{
+    setUpMaster();
+}
+
+I2c::~I2c() = default;
+
 void I2c::setUpMaster()
 {
     i2c_master_bus_config_t busConfig{

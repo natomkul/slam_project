@@ -13,17 +13,8 @@ Class of robot itself.
 class Robot
 {
 public:
-    Robot(Accelerometer accelerometer, Leds leds, Lidar lidar, MotorManager motors) : accelerometer(accelerometer),
-                                                                                      leds(leds),
-                                                                                      lidar(lidar),
-                                                                                      motors(motors)
-    {
-        start();
-    }
-    ~Robot()
-    {
-        stop();
-    };
+    Robot(Accelerometer accelerometer, Leds leds, Lidar lidar, MotorManager motors);
+    ~Robot();
 
 private:
     Accelerometer accelerometer;

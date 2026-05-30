@@ -11,10 +11,8 @@ Stores multiple LEDs inside and allows [] access to them.
 class Leds
 {
 public:
-    Leds(Pwm &pwm) : pwm(pwm) {
-
-                     };
-    ~Leds() = default;
+    Leds(Pwm &pwm);
+    ~Leds();
 
     Led &operator[](gpio_num_t portNumber)
     {

@@ -9,6 +9,17 @@ namespace
 #define dataRegister 0x04
 }
 
+Accelerometer::Accelerometer(I2c &i2c) : i2c(i2c)
+{
+    data[0] = 0x67;
+    initializeI2c();
+}
+
+Accelerometer::~Accelerometer()
+{
+    isMeasuring = false;
+}
+
 void Accelerometer::initializeI2c()
 {
     slave = i2c.createSlave(i2cAddress);

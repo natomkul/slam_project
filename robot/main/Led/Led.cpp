@@ -5,6 +5,16 @@
 
 #include "freertos/FreeRTOS.h"
 
+Led::Led(gpio_num_t portNumber, Pwm &pwm) : portNumber(portNumber), pwm(pwm)
+{
+    pwm.addChannel(portNumber, 0);
+}
+
+Led::~Led()
+{
+    off();
+}
+
 void Led::on()
 {
     changeDuty(255);

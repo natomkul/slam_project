@@ -6,11 +6,8 @@
 class I2cSlave
 {
 public:
-    I2cSlave(uint16_t address) : address(address)
-    {
-        setupSlave();
-    };
-    ~I2cSlave() = default;
+    I2cSlave(uint16_t address);
+    ~I2cSlave();
 
     void setupSlave();
 

@@ -1,5 +1,12 @@
 #include "i2cSlave.hpp"
 
+I2cSlave::I2cSlave(uint16_t address) : address(address)
+{
+    setupSlave();
+}
+
+I2cSlave::~I2cSlave() = default;
+
 void I2cSlave::setupSlave()
 {
     devConfig = {

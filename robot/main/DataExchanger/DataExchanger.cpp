@@ -17,6 +17,8 @@ DataExchanger::DataExchanger(const std::string ip, const uint16_t port, const st
     connectToWifi();
 }
 
+DataExchanger::~DataExchanger() = default;
+
 void DataExchanger::connectToWifi()
 {
     esp_err_t err = nvs_flash_init();

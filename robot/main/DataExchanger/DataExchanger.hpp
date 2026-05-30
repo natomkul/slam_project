@@ -36,7 +36,7 @@ class DataExchanger
 {
 public:
     DataExchanger(const std::string ip, const uint16_t port, const std::string ssid, const std::string password);
-    ~DataExchanger() = default;
+    ~DataExchanger();
 
     static void wifiEventHandler(void *event_handler_arg, esp_event_base_t event_base, int32_t event_id, void *event_data);
     void connectToWifi();

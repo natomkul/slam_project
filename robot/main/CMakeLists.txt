@@ -6,12 +6,14 @@ idf_component_register(SRCS
     "Led/Led.cpp"
     "Led/Leds.cpp"
     "Lidar/Lidar.cpp"
+    "Motor/Encoder.cpp"
     "Motor/Motor.cpp"
     "Motor/MotorManager.cpp"
     "Pwm/Pwm.cpp"
     "Pwm/PwmChannel.cpp"
     "Robot/Robot.cpp"
     "Uart/Uart.cpp"
+    "RobotAPI.cpp"
     "main.cpp"
     REQUIRES esp_driver_uart
     REQUIRES esp_driver_i2c

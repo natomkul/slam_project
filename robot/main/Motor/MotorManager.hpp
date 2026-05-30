@@ -8,16 +8,16 @@
 class MotorManager
 {
 public:
-    MotorManager() = default;
-    ~MotorManager() = default;
+    MotorManager();
+    ~MotorManager();
 
-    Motor operator[](gpio_num_t portNumber)
+    Motor operator[](const int motorNumber)
     {
-        return motors.at(portNumber);
+        return motors.at(motorNumber);
     }
 
-    void addMotor(const gpio_num_t portNumberA, const gpio_num_t portNumberB, const Encoder encoder);
+    void addMotor(const int motorNumber, Motor motor);
 
 private:
-    std::map<gpio_num_t, Motor> motors;
+    std::map<int, Motor> motors;
 };

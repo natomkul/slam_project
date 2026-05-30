@@ -10,14 +10,8 @@ Controls single LED with PWM. Allows duty and frequency changes;
 class Led
 {
 public:
-    Led(gpio_num_t portNumber, Pwm &pwm) : portNumber(portNumber), pwm(pwm)
-    {
-        pwm.addChannel(portNumber, 0);
-    }
-    ~Led()
-    {
-        off();
-    }
+    Led(gpio_num_t portNumber, Pwm &pwm);
+    ~Led();
     void on();
     void blinkOn();
     void blinkOff();

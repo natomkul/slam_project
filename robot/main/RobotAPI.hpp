@@ -9,6 +9,6 @@ This might not be true. We'll find out how to do this later.
 */
 class RobotAPI
 {
-    RobotAPI() = default;
-    ~RobotAPI() = default;
+    RobotAPI();
+    ~RobotAPI();
 };
