@@ -32,9 +32,11 @@ public:
     Motor(const gpio_num_t portNumberA, const gpio_num_t portNumberB, Encoder &encoder, Pwm &pwm);
     ~Motor();
 
-    void moveForEncoderTicksCount(int ticks, PowerMode PowerMode);
+    void start(bool forward, PowerMode powerMode);
+    void stop();
+    void resetEncoder();
+    int16_t getEncoderTicks();
 
-private:
     const gpio_num_t portNumberA;
     const gpio_num_t portNumberB;
     Encoder &encoder;

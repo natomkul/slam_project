@@ -9,6 +9,7 @@
 #include <stdio.h>
 
 #include "Robot/Robot.hpp"
+#include "RobotAPI.hpp"
 #include "Motor/MotorManager.hpp"
 #include "Pwm/Pwm.hpp"
 #include "DataExchanger/DataExchanger.hpp"
@@ -42,7 +43,8 @@ void app_main()
     motorManager.addMotor(1, motorLeft);
     motorManager.addMotor(2, motorRight);
 
-    static Robot robot{accelerometer, leds, lidar, motorManager};
+    static Robot robot{dataExchanger, accelerometer, leds, lidar, motorManager};
+    static RobotAPI robotAPI{robot};
 
     dataExchanger.appendToSending(std::bind(&Lidar::receiveData, &lidar), lidar.data);
     dataExchanger.appendToSending(std::bind(&Accelerometer::receiveData, &accelerometer), accelerometer.data);

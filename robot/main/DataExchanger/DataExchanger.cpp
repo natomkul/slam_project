@@ -1,5 +1,7 @@
 #include "DataExchanger.hpp"
 
+#include <cerrno>
+
 #define WIFI_CONNECTED_BIT BIT0
 #define WIFI_CONNECT_TIMEOUT_MS 15000
 
@@ -169,20 +171,21 @@ void DataExchanger::startTcpClient()
             printf("Couldn't connect to a socket\n");
             continue;
         }
-        int i = 0;
-        int size = sendingVector.size();
         while (true)
         {
             printf("waiting\n");
             vTaskDelay(pdMS_TO_TICKS(2000));
-            printf("before i = %d", i);
-            for (i = 0; i < size; i++)
+            for (std::size_t i = 0; i < sendingVector.size(); i++)
             {
-                printf("after i = %d", i);
                 sendData(sendingVector[i].first, sendingVector[i].second);
             }
+            if (!receiveData())
+            {
+                close(sock);
+                sock = -1;
+                break;
+            }
             vTaskDelay(pdMS_TO_TICKS(50));
-            i = 0;
         }
     }
 }
@@ -190,6 +193,11 @@ void DataExchanger::startTcpClient()
 void DataExchanger::appendToSending(std::function<int()> method, uint8_t *bufferPointer)
 {
     sendingVector.push_back({method, bufferPointer});
+}
+
+void DataExchanger::appendToReceiving(std::function<void()> method, uint8_t *bufferPointer, std::size_t bufferSize)
+{
+    receivingVector.push_back({method, bufferPointer, bufferSize, 0});
 }
 
 void DataExchanger::sendData(std::function<int()> method, uint8_t *bufferPointer)
@@ -219,4 +227,35 @@ void DataExchanger::sendData(std::function<int()> method, uint8_t *bufferPointer
             printf("%d bytes of data  succeesfully sent!", sent);
         }
     }
+}
+
+bool DataExchanger::receiveData()
+{
+    for (auto &entry : receivingVector)
+    {
+        const std::size_t remainingBytes = entry.bufferSize - entry.bytesReceived;
+        const int received = recv(sock, entry.bufferPointer + entry.bytesReceived, remainingBytes, MSG_DONTWAIT);
+
+        if (received > 0)
+        {
+            entry.bytesReceived += static_cast<std::size_t>(received);
+            if (entry.bytesReceived == entry.bufferSize)
+            {
+                entry.method();
+                entry.bytesReceived = 0;
+            }
+        }
+        else if (received == 0)
+        {
+            ESP_LOGW(TAG, "Socket closed by peer");
+            return false;
+        }
+        else if (errno != EAGAIN && errno != EWOULDBLOCK)
+        {
+            ESP_LOGW(TAG, "Receive failed: errno %d", errno);
+            return false;
+        }
+    }
+
+    return true;
 }

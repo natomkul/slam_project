@@ -17,6 +17,8 @@ public:
     }
 
     void addMotor(const int motorNumber, Motor &motor);
+    void moveMotorsForEncoderTicksCount(int ticks, PowerMode PowerMode);
+    void rotateMotorsForEncoderTicksCount(int ticks, PowerMode PowerMode);
 
 private:
     std::map<int, Motor> motors;

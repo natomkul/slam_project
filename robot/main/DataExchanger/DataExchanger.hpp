@@ -26,7 +26,11 @@
 #include "freertos/event_groups.h"
 #include "freertos/semphr.h"
 
+#include <cstddef>
+#include <cstdint>
 #include <functional>
+#include <utility>
+#include <vector>
 
 /*
 TCP sender, receiver
@@ -43,16 +47,25 @@ public:
     int createSocketAndConnect();
     void startTcpClient();
     void appendToSending(std::function<int()> method, uint8_t *bufferPointer);
+    void appendToReceiving(std::function<void()> method, uint8_t *bufferPointer, std::size_t bufferSize);
     void sendData(std::function<int()> method, uint8_t *bufferPointer);
+    bool receiveData();
 
 private:
+    struct ReceivingEntry
+    {
+        std::function<void()> method;
+        uint8_t *bufferPointer;
+        std::size_t bufferSize;
+        std::size_t bytesReceived;
+    };
+
     std::vector<std::pair<std::function<int()>, uint8_t *>> sendingVector;
+    std::vector<ReceivingEntry> receivingVector;
     const std::string ip;
     const uint16_t port;
     const std::string ssid;
     const std::string password;
 
     int sock;
-
-    // as for now without receive buffer
 };
