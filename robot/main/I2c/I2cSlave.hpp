@@ -3,10 +3,11 @@
 #include <driver/i2c_master.h>
 #include <cstdint>
 
-class I2cSlave{
-    public:
-    I2cSlave(uint16_t address) :
-    address(address){
+class I2cSlave
+{
+public:
+    I2cSlave(uint16_t address) : address(address)
+    {
         setupSlave();
     };
     ~I2cSlave() = default;
@@ -16,8 +17,7 @@ class I2cSlave{
     i2c_device_config_t devConfig;
     i2c_master_dev_handle_t device;
     const uint16_t address;
-    
-    private:
-    const uint32_t sclSpeed = 100000;
 
+private:
+    const uint32_t sclSpeed = 100000;
 };

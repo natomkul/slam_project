@@ -13,20 +13,21 @@ into packages that can be sent further.
 // The frames are already constructed so do we really
 // need this structs or just blindly transmit them to PC?
 
-class Lidar {
-    public:
-    Lidar(uint16_t TxPin, uint16_t RxPin, int baudRate) : uart{TxPin, RxPin, baudRate, data, 2048}{};
-    ~Lidar(){
+class Lidar
+{
+public:
+    Lidar(uint16_t TxPin, uint16_t RxPin, int baudRate) : uart{TxPin, RxPin, baudRate, data, 2048} {};
+    ~Lidar()
+    {
         isReceiving = false;
     };
 
     uint8_t data[2048];
 
     int receiveData();
-    
-    private:
+
+private:
     Uart uart;
     bool isReceiving = false;
     uint sleepTime = 10;
-
 };

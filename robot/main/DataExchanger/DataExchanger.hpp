@@ -28,13 +28,13 @@
 
 #include <functional>
 
-
 /*
 TCP sender, receiver
 */
 
-class DataExchanger {
-    public:
+class DataExchanger
+{
+public:
     DataExchanger(const std::string ip, const uint16_t port, const std::string ssid, const std::string password);
     ~DataExchanger() = default;
 
@@ -42,11 +42,11 @@ class DataExchanger {
     void connectToWifi();
     int createSocketAndConnect();
     void startTcpClient();
-    void appendToSending(std::function<int()> method, uint8_t* bufferPointer);
-    void sendData(std::function<int()> method, uint8_t* bufferPointer);
+    void appendToSending(std::function<int()> method, uint8_t *bufferPointer);
+    void sendData(std::function<int()> method, uint8_t *bufferPointer);
 
-    private:
-    std::vector<std::pair<std::function<int()>, uint8_t*>> sendingVector;
+private:
+    std::vector<std::pair<std::function<int()>, uint8_t *>> sendingVector;
     const std::string ip;
     const uint16_t port;
     const std::string ssid;

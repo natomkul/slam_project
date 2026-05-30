@@ -1,9 +1,9 @@
 #include "Robot/Robot.hpp"
 
-void Robot::start(){
+void Robot::start() {
     // accl start
     // lidar start
     // encoders start
 };
 
-void Robot::stop(){};
+void Robot::stop() {};

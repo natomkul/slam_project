@@ -13,15 +13,16 @@ ticks needed based on wheel diameter and allow to move by certain distance.
 */
 class Motor {   
     public:
-    Motor(const gpio_num_t portNumber, const Encoder encoder,  const uint16_t wheelDiameterInMM, Pwm& pwm)
-    : portNumber(portNumber), encoder(encoder), wheelDiameterInMM(wheelDiameterInMM), pwm(pwm){
-        pwm.addChannel(portNumber, 0);
+    Motor(const gpio_num_t portNumberA, const gpio_num_t portNumberB, const Encoder encoder, Pwm& pwm)
+    : portNumberA(portNumberA), portNumberB(portNumberB), encoder(encoder), pwm(pwm){
+        pwm.addChannel(portNumberA, 0);
+        pwm.addChannel(portNumberB, 0);
     };
     ~Motor(){};
     
     private:
-    const gpio_num_t portNumber;
+    const gpio_num_t portNumberA;
+    const gpio_num_t portNumberB;
     const Encoder encoder;
-    const uint16_t wheelDiameterInMM; // to estimate distance
     Pwm& pwm;
 };

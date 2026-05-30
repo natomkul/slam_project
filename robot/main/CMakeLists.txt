@@ -7,6 +7,7 @@ idf_component_register(SRCS
     "Led/Leds.cpp"
     "Lidar/Lidar.cpp"
     "Motor/Motor.cpp"
+    "Motor/MotorManager.cpp"
     "Pwm/Pwm.cpp"
     "Pwm/PwmChannel.cpp"
     "Robot/Robot.cpp"

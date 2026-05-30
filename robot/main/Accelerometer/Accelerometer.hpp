@@ -5,7 +5,7 @@
 #include "I2c/I2c.hpp"
 
 /*
-Gets data from accelerometer and converts it into packets, 
+Gets data from accelerometer and converts it into packets,
 which can be sent further. Packages are needed because this
 is raw data afaik.
 */
@@ -23,9 +23,10 @@ is raw data afaik.
 //     int16_t accelerationY;
 //     int16_t accelerationZ;
 // };
-class Accelerometer {
-    public:
-    Accelerometer(I2c& i2c) : i2c(i2c)
+class Accelerometer
+{
+public:
+    Accelerometer(I2c &i2c) : i2c(i2c)
     {
         data[0] = 0x67;
         initializeI2c();
@@ -39,8 +40,8 @@ class Accelerometer {
 
     int receiveData();
 
-    private:
-    I2c& i2c;
+private:
+    I2c &i2c;
     bool isMeasuring = false;
     uint8_t receiveBuffer[20];
     std::shared_ptr<I2cSlave> slave;

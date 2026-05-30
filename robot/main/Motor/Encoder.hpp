@@ -3,7 +3,8 @@
 #include <cstdint>
 #include <esp_timer.h>
 
-enum Event {
+enum Event
+{
     clockwise,
     counterclockwise
 };
@@ -13,10 +14,10 @@ enum Event {
 Class having two channels connected to encoders. Store events to some buffer,
 that will be further send to computer.
 */
-class Encoder{
-    public:
-    Encoder(const uint16_t ppr, const gpio_num_t channelA, const gpio_num_t channelB, float wheelRadius):
-    ppr(ppr), channelA(channelA), channelB(channelB), wheelRadius(wheelRadius)
+class Encoder
+{
+public:
+    Encoder(const uint16_t ppr, const gpio_num_t channelA, const gpio_num_t channelB, float wheelRadius) : ppr(ppr), channelA(channelA), channelB(channelB), wheelRadius(wheelRadius)
     {
         gpio_config_t io_conf{};
         io_conf.intr_type = GPIO_INTR_DISABLE;
@@ -40,7 +41,7 @@ class Encoder{
 
     int receiveData();
 
-    private:
+private:
     const uint16_t ppr; // pulses per revolution
     const gpio_num_t channelA;
     const gpio_num_t channelB;
@@ -52,5 +53,3 @@ class Encoder{
     uint8_t previousState{0};
     Event lastEvent{clockwise};
 };
-
-

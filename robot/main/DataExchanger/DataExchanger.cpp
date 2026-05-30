@@ -3,16 +3,15 @@
 #define WIFI_CONNECTED_BIT BIT0
 #define WIFI_CONNECT_TIMEOUT_MS 15000
 
-static const char* TAG = "DataExchanger";
+static const char *TAG = "DataExchanger";
 static EventGroupHandle_t wifi_event_group;
 static StaticEventGroup_t wifi_event_group_buffer;
-static esp_netif_t* sta_netif = nullptr;
+static esp_netif_t *sta_netif = nullptr;
 static bool wifi_handlers_registered = false;
 static bool wifi_driver_initialized = false;
 
-
-DataExchanger::DataExchanger(const std::string ip, const uint16_t port, const std::string ssid, const std::string password) 
-: ip(ip), port(port), ssid(ssid), password(password)
+DataExchanger::DataExchanger(const std::string ip, const uint16_t port, const std::string ssid, const std::string password)
+    : ip(ip), port(port), ssid(ssid), password(password)
 {
     wifi_event_group = xEventGroupCreateStatic(&wifi_event_group_buffer);
     connectToWifi();
@@ -21,44 +20,51 @@ DataExchanger::DataExchanger(const std::string ip, const uint16_t port, const st
 void DataExchanger::connectToWifi()
 {
     esp_err_t err = nvs_flash_init();
-    if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+    if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND)
+    {
         ESP_ERROR_CHECK(nvs_flash_erase());
         err = nvs_flash_init();
     }
     ESP_ERROR_CHECK(err);
     err = esp_netif_init();
-    if (err != ESP_OK && err != ESP_ERR_INVALID_STATE) {
+    if (err != ESP_OK && err != ESP_ERR_INVALID_STATE)
+    {
         ESP_ERROR_CHECK(err);
     }
 
     err = esp_event_loop_create_default();
-    if (err != ESP_OK && err != ESP_ERR_INVALID_STATE) {
+    if (err != ESP_OK && err != ESP_ERR_INVALID_STATE)
+    {
         ESP_ERROR_CHECK(err);
     }
 
-    if (sta_netif == nullptr) {
+    if (sta_netif == nullptr)
+    {
         sta_netif = esp_netif_create_default_wifi_sta();
     }
-    
-    if (!wifi_driver_initialized) {
+
+    if (!wifi_driver_initialized)
+    {
         wifi_init_config_t wifi_initiation = WIFI_INIT_CONFIG_DEFAULT();
         err = esp_wifi_init(&wifi_initiation);
-        if (err != ESP_OK && err != ESP_ERR_INVALID_STATE) {
+        if (err != ESP_OK && err != ESP_ERR_INVALID_STATE)
+        {
             ESP_ERROR_CHECK(err);
         }
         wifi_driver_initialized = true;
     }
-    if (!wifi_handlers_registered) {
+    if (!wifi_handlers_registered)
+    {
         ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, wifiEventHandler, NULL));
         ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, wifiEventHandler, NULL));
         wifi_handlers_registered = true;
     }
 
     wifi_config_t wifi_configuration = {};
-    strncpy((char*)wifi_configuration.sta.ssid,
-        ssid.c_str(), sizeof(wifi_configuration.sta.ssid));
-    strncpy((char*)wifi_configuration.sta.password,
-        password.c_str(), sizeof(wifi_configuration.sta.password));
+    strncpy((char *)wifi_configuration.sta.ssid,
+            ssid.c_str(), sizeof(wifi_configuration.sta.ssid));
+    strncpy((char *)wifi_configuration.sta.password,
+            password.c_str(), sizeof(wifi_configuration.sta.password));
 
     wifi_configuration.sta.threshold.authmode = WIFI_AUTH_WPA2_PSK;
     wifi_configuration.sta.pmf_cfg.capable = true;
@@ -67,12 +73,14 @@ void DataExchanger::connectToWifi()
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_configuration));
     err = esp_wifi_start();
-    if (err != ESP_OK && err != ESP_ERR_WIFI_CONN) {
+    if (err != ESP_OK && err != ESP_ERR_WIFI_CONN)
+    {
         ESP_ERROR_CHECK(err);
     }
 
     err = esp_wifi_connect();
-    if (err != ESP_OK && err != ESP_ERR_WIFI_CONN) {
+    if (err != ESP_OK && err != ESP_ERR_WIFI_CONN)
+    {
         ESP_ERROR_CHECK(err);
     }
 
@@ -83,24 +91,32 @@ void DataExchanger::connectToWifi()
         pdTRUE,
         pdMS_TO_TICKS(WIFI_CONNECT_TIMEOUT_MS));
 
-    if ((wifi_bits & WIFI_CONNECTED_BIT) == 0) {
+    if ((wifi_bits & WIFI_CONNECTED_BIT) == 0)
+    {
         ESP_LOGW(TAG, "WiFi connect timeout. Ensure SSID is 2.4GHz and credentials are correct.");
     }
 };
 
-void DataExchanger::wifiEventHandler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data){
-    if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_CONNECTED) {
+void DataExchanger::wifiEventHandler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data)
+{
+    if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_CONNECTED)
+    {
         printf("WiFi connected\n");
-    } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) {
+    }
+    else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED)
+    {
         printf("WiFi disconnected, retrying...\n");
         esp_wifi_connect();
-    } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
+    }
+    else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP)
+    {
         xEventGroupSetBits(wifi_event_group, WIFI_CONNECTED_BIT);
         printf("Got IP, ready\n");
     }
 }
 
-int DataExchanger::createSocketAndConnect(){
+int DataExchanger::createSocketAndConnect()
+{
     struct sockaddr_in dest_addr{};
     dest_addr.sin_family = AF_INET;
     dest_addr.sin_port = htons(port);
@@ -139,7 +155,8 @@ int DataExchanger::createSocketAndConnect(){
     return sock;
 };
 
-void DataExchanger::startTcpClient(){
+void DataExchanger::startTcpClient()
+{
     while (true)
     {
         sock = createSocketAndConnect();
@@ -149,15 +166,16 @@ void DataExchanger::startTcpClient(){
             vTaskDelay(pdMS_TO_TICKS(2000));
             printf("Couldn't connect to a socket\n");
             continue;
-
         }
         int i = 0;
         int size = sendingVector.size();
-        while(true){
+        while (true)
+        {
             printf("waiting\n");
             vTaskDelay(pdMS_TO_TICKS(2000));
             printf("before i = %d", i);
-            for(i = 0; i < size; i++){
+            for (i = 0; i < size; i++)
+            {
                 printf("after i = %d", i);
                 sendData(sendingVector[i].first, sendingVector[i].second);
             }
@@ -167,31 +185,36 @@ void DataExchanger::startTcpClient(){
     }
 }
 
-void DataExchanger::appendToSending(std::function<int()> method, uint8_t* bufferPointer){
+void DataExchanger::appendToSending(std::function<int()> method, uint8_t *bufferPointer)
+{
     sendingVector.push_back({method, bufferPointer});
 }
 
-void DataExchanger::sendData(std::function<int()> method, uint8_t* bufferPointer)
+void DataExchanger::sendData(std::function<int()> method, uint8_t *bufferPointer)
 {
     int length = method();
-    if(length < 0){
+    if (length < 0)
+    {
         printf("Length < 0\n");
         abort();
         // throw
-    }else if(length == 0){
+    }
+    else if (length == 0)
+    {
         printf("No data to send\n");
         // no data to send
-    }else{
+    }
+    else
+    {
         int sent = send(sock, bufferPointer, length, 0);
-        if(sent < 0){
+        if (sent < 0)
+        {
             printf("error sent < 0");
             // throw
-        }else{
+        }
+        else
+        {
             printf("%d bytes of data  succeesfully sent!", sent);
         }
     }
-
 }
-
-
- 

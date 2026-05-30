@@ -4,9 +4,11 @@
 #include "driver/ledc.h"
 #include "driver/gpio.h"
 
-class PwmChannel{
-    public:
-    PwmChannel(gpio_num_t portNumber, uint8_t duty){
+class PwmChannel
+{
+public:
+    PwmChannel(gpio_num_t portNumber, uint8_t duty)
+    {
         channel = reserveNextChannel();
         ledc_channel_config_t config = {
             .gpio_num = portNumber,
@@ -23,7 +25,8 @@ class PwmChannel{
             .deconfigure = false,
         };
         esp_err_t esp_ret = ledc_channel_config(&config);
-        if(esp_ret != ESP_OK){
+        if (esp_ret != ESP_OK)
+        {
             printf("Error: Failed to initialize pwm, ERROR: 0x%x\r\n", esp_ret);
             abort();
         }
@@ -35,8 +38,8 @@ class PwmChannel{
 
     ledc_channel_t reserveNextChannel();
 
-    private:
-        ledc_channel_t channel;
-        uint8_t duty;
-        uint32_t frequency;
+private:
+    ledc_channel_t channel;
+    uint8_t duty;
+    uint32_t frequency;
 };

@@ -8,20 +8,22 @@
 Stores multiple LEDs inside and allows [] access to them.
 */
 
-class Leds{
-    public:
-    Leds(Pwm& pwm) : pwm(pwm){
-        
-    };
+class Leds
+{
+public:
+    Leds(Pwm &pwm) : pwm(pwm) {
+
+                     };
     ~Leds() = default;
 
-    Led& operator[](gpio_num_t portNumber){
+    Led &operator[](gpio_num_t portNumber)
+    {
         return leds.at(portNumber);
     }
 
     void addLed(gpio_num_t portNumber);
 
-    private:
+private:
     std::map<gpio_num_t, Led> leds;
-    Pwm& pwm;
+    Pwm &pwm;
 };

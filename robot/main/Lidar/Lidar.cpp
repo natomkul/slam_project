@@ -1,6 +1,6 @@
 #include "Lidar.hpp"
 
-
-int Lidar::receiveData(){
+int Lidar::receiveData()
+{
     return uart.receive();
 }
