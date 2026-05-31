@@ -25,3 +25,7 @@ add_executable(server
 target_include_directories(server PRIVATE
     ${CMAKE_SOURCE_DIR}/communication
 )
+
+if(WIN32)
+    target_link_libraries(server PRIVATE ws2_32)
+endif()
