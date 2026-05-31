@@ -4,15 +4,17 @@
 
 int main(int argc, char** argv)
 {
+    auto server = std::make_unique<TCPserver>(PORT);
+     
     rclcpp::init(argc, argv);
 
-    auto node = std::make_shared<SensorsNode>(PORT);
+    auto node = std::make_shared<SensorsNode>(server.get());
 
-    node->start();   // 🔥 TCP thread start
+    node->start();
 
     rclcpp::spin(node);
 
-    node->stop();    // cleanup
+    node->stop();
 
     rclcpp::shutdown();
     return 0;

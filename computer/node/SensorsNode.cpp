@@ -1,11 +1,12 @@
 #include "SensorsNode.h"
 
-SensorsNode::SensorsNode(const char* PORT) 
-    : Node("sensor_node"), server(new TCPserver(PORT))
+SensorsNode::SensorsNode(TCPserver* server) 
+    : Node("sensor_node"), server(server)
 {
-    scan_pub_ = this->create_publisher<sensor_msgs::msg::LaserScan>("/scan", 10);
+    scan_pub_ = this->create_publisher<sensor_msgs::msg::LaserScan>("/scan/raw", 10);
+    imu_pub_ = this->create_publisher<sensor_msgs::msg::Imu>("/imu/raw", 10);
 
-    running_ = false;  // thread jeszcze nie startuje
+    running_ = false;
 
     RCLCPP_INFO(this->get_logger(), "SensorsNode initialized");
 }
@@ -49,6 +50,32 @@ void SensorsNode::publish_scan(const LiData& data)
     scan_pub_->publish(msg);
 }
 
+sensor_msgs::msg::Imu SensorsNode::AccelDataToImu(const AccData &data)
+{
+    sensor_msgs::msg::Imu imu_msg;
+
+    imu_msg.header.frame_id = "imu_link";
+    imu_msg.header.stamp = this->get_clock()->now();;
+
+    imu_msg.angular_velocity.x = data.gx;
+    imu_msg.angular_velocity.y = data.gy;
+    imu_msg.angular_velocity.z = data.gz;
+
+    imu_msg.linear_acceleration.x = data.ax;
+    imu_msg.linear_acceleration.y = data.ay;
+    imu_msg.linear_acceleration.z = data.az;
+
+    imu_msg.orientation_covariance[0] = -1;
+
+    return imu_msg;
+}
+
+void SensorsNode::publish_imu(const AccData& data)
+{
+    auto msg = AccelDataToImu(data);
+    imu_pub_->publish(msg);
+}
+
 bool SensorsNode::proc()
 {
     if (!server->connectSock())
@@ -83,8 +110,7 @@ bool SensorsNode::proc()
 
             else if constexpr (std::is_same_v<T, AccData>)
             {
-                std::cout << "Accel packet\n";
-
+                publish_imu(v);
             }
 
         }, *res);
