@@ -1,6 +1,6 @@
 #include "SensorsNode.h"
 
-SensorsNode::SensorsNode(TCPserver* server) 
+SensorsNode::SensorsNode(std::shared_ptr<TCPserver> server) 
     : Node("sensor_node"), server(server)
 {
     scan_pub_ = this->create_publisher<sensor_msgs::msg::LaserScan>("/scan/raw", 10);

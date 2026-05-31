@@ -14,14 +14,14 @@ class SensorsNode : public rclcpp::Node
     rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr imu_pub_;
     sensor_msgs::msg::Imu AccelDataToImu(const AccData &data);
 
-    TCPserver* server;
+    std::shared_ptr<TCPserver> server;
     
     std::thread proc_thread_;
     std::atomic<bool> running_{false};
 
     bool proc();
  public:
-    SensorsNode(TCPserver* server);
+    SensorsNode(std::shared_ptr<TCPserver> server);
 
     void publish_scan(const LiData& data);
     void publish_imu(const AccData& data);
