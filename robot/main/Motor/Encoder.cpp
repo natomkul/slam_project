@@ -1,14 +1,15 @@
 #include "Encoder.hpp"
 #include <cmath>
 #include <driver/gpio.h>
+#include <bit>
 
 #define PI 3.14
 
-Encoder::Encoder(const uint16_t ppr, const gpio_num_t channelA, const gpio_num_t channelB, const float wheelRadius)
-    : ppr(ppr), channelA(channelA), channelB(channelB), wheelRadius(wheelRadius)
+Encoder::Encoder(const uint8_t encoderNumber, const uint16_t ppr, const gpio_num_t channelA, const gpio_num_t channelB, const float wheelRadius)
+    : encoderNumber(encoderNumber), ppr(ppr), channelA(channelA), channelB(channelB), wheelRadius(wheelRadius)
 {
     gpio_config_t io_conf{};
-    io_conf.intr_type = GPIO_INTR_DISABLE;
+    io_conf.intr_type = GPIO_INTR_ANYEDGE;
     io_conf.mode = GPIO_MODE_INPUT;
     io_conf.pin_bit_mask = (1ULL << channelA) | (1ULL << channelB);
     io_conf.pull_up_en = GPIO_PULLUP_ENABLE;
@@ -17,6 +18,7 @@ Encoder::Encoder(const uint16_t ppr, const gpio_num_t channelA, const gpio_num_t
 
     previousState = (gpio_get_level(channelA) << 1) | gpio_get_level(channelB);
     data[0] = 0x68;
+    data[1] = encoderNumber;
 }
 
 Encoder::~Encoder() = default;
@@ -38,7 +40,6 @@ void Encoder::update()
     case 0b1110:
     case 0b1000:
         pulseCount.fetch_add(1);
-        lastEvent = clockwise;
         break;
 
     case 0b0010:
@@ -46,23 +47,22 @@ void Encoder::update()
     case 0b1101:
     case 0b1011:
         pulseCount.fetch_sub(1);
-        lastEvent = counterclockwise;
         break;
     }
 
     previousState = currentState;
 }
 
-float Encoder::getRevolutions() const
+float Encoder::getRevolutions(int16_t pulseCount) const
 {
     const float countsPerRevolution = static_cast<float>(ppr) * 210.0 * 4.0;
-    return pulseCount.load() / countsPerRevolution;
+    return pulseCount / countsPerRevolution;
 }
 
-float Encoder::getDistanceInMeters() const
+float Encoder::getDistanceInMeters(int16_t pulseCount) const
 {
     const float circumference = 2.0 * static_cast<float>(PI) * wheelRadius;
-    return getRevolutions() * circumference;
+    return getRevolutions(pulseCount) * circumference;
 }
 
 void Encoder::reset()
@@ -77,9 +77,13 @@ int16_t Encoder::getPulseCount()
 
 int Encoder::receiveData()
 {
-    data[1] = pulseCount.load() & 0xFF;
-    data[2] = (pulseCount.load() & 0xFF00) >> 8;
-    data[3] = lastEvent;
-
+    uint16_t currentPulseCount = pulseCount.load();
+    uint16_t sentPulseCount = currentPulseCount - previousPulseCount.load();
+    int32_t meters = std::bit_cast<int32_t>(getDistanceInMeters(sentPulseCount));
+    data[2] = meters & 0xFF;
+    data[3] = (meters & 0xFF00) >> 8;
+    data[4] = (meters & 0xFF0000) >> 16;
+    data[5] = (meters & 0xFF000000) >> 24;
+    previousPulseCount.store(currentPulseCount);
     return sizeof(data);
 }

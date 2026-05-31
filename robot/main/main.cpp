@@ -33,10 +33,10 @@ void app_main()
     static Pwm pwm{10000};
     static Leds leds{pwm}; // empty for now
 
-    static Encoder encoderLeft(7, GPIO_NUM_1, GPIO_NUM_2, 0.05);        // motor 1 {10, 11}, encoders A - 1, B - 2
+    static Encoder encoderLeft(1, 7, GPIO_NUM_1, GPIO_NUM_2, 0.05);     // motor 1 {10, 11}, encoders A - 1, B - 2
     static Motor motorLeft(GPIO_NUM_10, GPIO_NUM_11, encoderLeft, pwm); // Motor 1
 
-    static Encoder encoderRight(7, GPIO_NUM_4, GPIO_NUM_5, 0.05);         // motor 2 {12, 13}, encoders A - 4, B - 5
+    static Encoder encoderRight(2, 7, GPIO_NUM_4, GPIO_NUM_5, 0.05);      // motor 2 {12, 13}, encoders A - 4, B - 5
     static Motor motorRight(GPIO_NUM_12, GPIO_NUM_13, encoderRight, pwm); // Motor 2
 
     static MotorManager motorManager{};
@@ -48,6 +48,8 @@ void app_main()
 
     dataExchanger.appendToSending(std::bind(&Lidar::receiveData, &lidar), lidar.data);
     dataExchanger.appendToSending(std::bind(&Accelerometer::receiveData, &accelerometer), accelerometer.data);
+    dataExchanger.appendToSending(std::bind(&Encoder::receiveData, &encoderLeft), encoderLeft.data);
+    dataExchanger.appendToSending(std::bind(&Encoder::receiveData, &encoderRight), encoderRight.data);
 
     vTaskDelay(5000 / portTICK_PERIOD_MS);
 
