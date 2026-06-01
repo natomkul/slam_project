@@ -16,14 +16,26 @@ Encoder::Encoder(const uint8_t encoderNumber, const uint16_t ppr, const gpio_num
     io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
     gpio_config(&io_conf);
 
+    gpio_isr_handler_add(channelA, Encoder::gpio_isr_handler, this);
+    gpio_isr_handler_add(channelB, Encoder::gpio_isr_handler, this);
+
     previousState = (gpio_get_level(channelA) << 1) | gpio_get_level(channelB);
     data[0] = 0x68;
     data[1] = encoderNumber;
 }
 
-Encoder::~Encoder() = default;
+Encoder::~Encoder(){
+    gpio_isr_handler_remove(channelA);
+    gpio_isr_handler_remove(channelB);
+}
 
-void Encoder::update()
+void IRAM_ATTR Encoder::gpio_isr_handler(void *arg)
+{
+    Encoder *encoder = static_cast<Encoder *>(arg);
+    encoder->update();
+}
+
+void IRAM_ATTR Encoder::update()
 {
     uint8_t currentState = (gpio_get_level(channelA) << 1) | gpio_get_level(channelB);
 

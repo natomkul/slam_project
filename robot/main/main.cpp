@@ -33,6 +33,8 @@ void app_main()
     static Pwm pwm{10000};
     static Leds leds{pwm}; // empty for now
 
+    gpio_install_isr_service(0);
+    
     static Encoder encoderLeft(1, 7, GPIO_NUM_1, GPIO_NUM_2, 0.05);     // motor 1 {10, 11}, encoders A - 1, B - 2
     static Motor motorLeft(GPIO_NUM_10, GPIO_NUM_11, encoderLeft, pwm); // Motor 1
 

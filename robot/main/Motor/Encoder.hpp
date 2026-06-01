@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <driver/gpio.h>
 #include <esp_timer.h>
+#include <esp_attr.h>
 #include <atomic>
 
 /*
@@ -15,8 +16,9 @@ public:
     Encoder(const uint8_t encoderNumber, const uint16_t ppr, const gpio_num_t channelA, const gpio_num_t channelB, const float wheelRadius);
     ~Encoder();
 
-        void update();
+    void update();
 
+    static void IRAM_ATTR gpio_isr_handler(void *arg);
     float getRevolutions(int16_t pulseCount) const;
     float getDistanceInMeters(int16_t pulseCount) const;
     float getVelocityInMpS();
