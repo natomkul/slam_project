@@ -1,21 +1,15 @@
-#include "SensorsNode.h"
+#include "wrapper.h"
 
 #define PORT "3000"
 
 int main(int argc, char** argv)
 {
-    auto server = std::make_shared<TCPserver>(PORT);
-     
-    rclcpp::init(argc, argv);
+    auto w = std::make_unique<Wrapper>(argc, argv, PORT);
 
-    auto node = std::make_shared<SensorsNode>(server);
+    if (!w->sendORrecv(1)) //parzysta -> ruch | nieparzysta -> odbieranie z czujnikow
+    {
+        return -1;
+    }
 
-    node->start();
-
-    rclcpp::spin(node);
-
-    node->stop();
-
-    rclcpp::shutdown();
     return 0;
 }

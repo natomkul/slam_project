@@ -168,3 +168,18 @@ TCPserver::FResult TCPserver::receiveData()
     }
 }
 
+bool TCPserver::send_motion(const char* msg)
+{
+    if (send(cfd, msg, strlen(msg), 0) == -1)
+    {
+        perror("server send");
+        
+        close(cfd);
+        close(sfd);
+
+        return false;
+    }
+
+    return true;
+}
+

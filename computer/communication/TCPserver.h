@@ -30,5 +30,7 @@ class TCPserver
  
     bool connectSock();
     FResult receiveData();
+
+    bool send_motion(const char* msg);
 };
 

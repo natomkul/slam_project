@@ -78,11 +78,6 @@ void SensorsNode::publish_imu(const AccData& data)
 
 bool SensorsNode::proc()
 {
-    if (!server->connectSock())
-    {
-        return false;
-    }
-
     bool run = true;
 
     while(run) 

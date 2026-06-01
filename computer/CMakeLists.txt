@@ -22,6 +22,7 @@ set(SOURCES
 file(GLOB COMMUNICATION_SOURCES
     communication/*.cpp
     node/*.cpp
+    motion/*.cpp
 )
 
 # =========================
@@ -38,6 +39,7 @@ add_executable(server
 target_include_directories(server PRIVATE
     ${CMAKE_SOURCE_DIR}/communication
     ${CMAKE_SOURCE_DIR}/node
+    ${CMAKE_SOURCE_DIR}/motion
 )
 
 # =========================
