@@ -38,6 +38,13 @@ LiData TCPserver::LidarHandl()
     return data.get_data();
 }
 
+EnData TCPserver::EncoderHandl()
+{
+    EncoderData data(cfd, sfd);
+
+    return data.get_data();
+}
+
 bool TCPserver::connectSock()
 {
     int status;
@@ -164,6 +171,7 @@ TCPserver::FResult TCPserver::receiveData()
     {
         case LIDAR_TYPE: return Result{LidarHandl()};
         case ACCEL_TYPE: return Result{AccelHandl()};
+        case ENCODER_TYPE: return Result{EncoderHandl()};
         default: return Result{std::monostate{}};
     }
 }

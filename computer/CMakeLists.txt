@@ -11,7 +11,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(sensor_msgs REQUIRED)
-
+find_package(nav_msgs REQUIRED)
+find_package(tf2 REQUIRED)
 # =========================
 # sources
 # =========================
@@ -48,6 +49,8 @@ target_include_directories(server PRIVATE
 ament_target_dependencies(server
     rclcpp
     sensor_msgs
+    nav_msgs
+    tf2
 )
 
 # =========================

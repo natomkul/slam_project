@@ -3,9 +3,10 @@
 SensorsNode::SensorsNode(std::shared_ptr<TCPserver> server) 
     : Node("sensor_node"), server(server)
 {
-    scan_pub_ = this->create_publisher<sensor_msgs::msg::LaserScan>("/scan/raw", 10);
-    imu_pub_ = this->create_publisher<sensor_msgs::msg::Imu>("/imu/raw", 10);
-
+    scan_pub_ = this->create_publisher<sensor_msgs::msg::LaserScan>("/scan", 10);
+    imu_pub_ = this->create_publisher<sensor_msgs::msg::Imu>("/imu", 10);
+    odom_pub_ = this->create_publisher<nav_msgs::msg::Odometry>("/odom", 10);
+    
     running_ = false;
 
     RCLCPP_INFO(this->get_logger(), "SensorsNode initialized");
@@ -76,6 +77,68 @@ void SensorsNode::publish_imu(const AccData& data)
     imu_pub_->publish(msg);
 }
 
+nav_msgs::msg::Odometry SensorsNode::EnDataToOdom(const EnPair &data)
+{
+    nav_msgs::msg::Odometry odom_msg;
+    rclcpp::Time current_time = this->get_clock()->now();
+
+    odom_msg.header.frame_id = "odom";
+    odom_msg.child_frame_id = "odom_link";
+    odom_msg.header.stamp = current_time;
+
+    float d_center = (data.delta_right + data.delta_left) / 2.0;
+    float d_theta = (data.delta_right - data.delta_left) / WHEEL_TRACK;
+
+    x_pos_ += d_center * std::cos(theta_ + d_theta / 2.0);
+    y_pos_ += d_center * std::sin(theta_ + d_theta / 2.0);
+    theta_ += d_theta;
+
+    static rclcpp::Time last_time = current_time;
+    float dt = (current_time - last_time).seconds();
+
+    if (dt > 0.0) {
+        odom_msg.twist.twist.linear.x = d_center / dt;
+        odom_msg.twist.twist.angular.z = d_theta / dt;
+    }
+
+    last_time = current_time;
+
+    odom_msg.pose.pose.position.x = x_pos_;
+    odom_msg.pose.pose.position.y = y_pos_;
+    odom_msg.pose.pose.position.z = 0.0;
+
+    odom_msg.pose.pose.orientation.x = 0.0;
+    odom_msg.pose.pose.orientation.y = 0.0;
+    odom_msg.pose.pose.orientation.z = std::sin(theta_ / 2.0);
+    odom_msg.pose.pose.orientation.w = std::cos(theta_ / 2.0);
+
+    return odom_msg;
+}
+
+void SensorsNode::publish_odom(const EnData& raw_data)
+{
+    if (raw_data.LorR == 1) 
+    {
+        para.delta_left = raw_data.meters;
+        left_received_ = true;
+    }
+    else if (raw_data.LorR == 2) 
+    {
+        para.delta_right = raw_data.meters;
+        right_received_ = true;
+    }
+
+    if (left_received_ && right_received_) 
+    {
+        left_received_ = false;
+        right_received_ = false;
+    
+        auto msg = EnDataToOdom(para);
+        odom_pub_->publish(msg);
+    }
+}
+    
+
 bool SensorsNode::proc()
 {
     bool run = true;
@@ -106,6 +169,10 @@ bool SensorsNode::proc()
             else if constexpr (std::is_same_v<T, AccData>)
             {
                 publish_imu(v);
+            }
+            else if constexpr (std::is_same_v<T, EnData>)
+            {
+                publish_odom(v);
             }
 
         }, *res);
