@@ -6,7 +6,9 @@ SensorsNode::SensorsNode(std::shared_ptr<TCPserver> server)
     scan_pub_ = this->create_publisher<sensor_msgs::msg::LaserScan>("/scan", 10);
     imu_pub_ = this->create_publisher<sensor_msgs::msg::Imu>("/imu", 10);
     odom_pub_ = this->create_publisher<nav_msgs::msg::Odometry>("/odom", 10);
-    
+
+    tf_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(this);
+
     running_ = false;
 
     RCLCPP_INFO(this->get_logger(), "SensorsNode initialized");
@@ -17,7 +19,29 @@ sensor_msgs::msg::LaserScan SensorsNode::LidarDataToScan(const LiData &data)
     sensor_msgs::msg::LaserScan scan;
 
     scan.header.frame_id = "lidar_link";
-    scan.header.stamp = this->get_clock()->now();;
+    
+    float dt = 0.1f;
+    
+    if (!first_lidar_packet_) 
+    {
+        int32_t diff = static_cast<int32_t>(data.timestamp) - static_cast<int32_t>(last_lidar_timestamp_);
+        
+        if (diff < 0) {
+            diff += 30000;
+        }
+        
+        if (diff > 0) {
+            dt = static_cast<float>(diff) / 1000.0f;
+        }
+    } 
+    else 
+    {
+        first_lidar_packet_ = false;
+    }
+
+    last_lidar_timestamp_ = data.timestamp;
+
+    scan.header.stamp = this->get_clock()->now();
 
     float start = ((float) data.startAngle) * M_PI / 180.0f;
     float end = ((float) data.endAngle) * M_PI / 180.0f;
@@ -27,7 +51,7 @@ sensor_msgs::msg::LaserScan SensorsNode::LidarDataToScan(const LiData &data)
 
     scan.angle_increment = (end - start) / (POINT_PER_PACK - 1);
 
-    scan.scan_time = (float) data.timestamp; //- "prev timestamp" ;
+    scan.scan_time = dt;
 
     //dokładnosc/ blad pomiarowy Lidara
     scan.range_min = 0.02f;
@@ -83,7 +107,7 @@ nav_msgs::msg::Odometry SensorsNode::EnDataToOdom(const EnPair &data)
     rclcpp::Time current_time = this->get_clock()->now();
 
     odom_msg.header.frame_id = "odom";
-    odom_msg.child_frame_id = "odom_link";
+    odom_msg.child_frame_id = "base_link";
     odom_msg.header.stamp = current_time;
 
     float d_center = (data.delta_right + data.delta_left) / 2.0;
@@ -135,6 +159,23 @@ void SensorsNode::publish_odom(const EnData& raw_data)
     
         auto msg = EnDataToOdom(para);
         odom_pub_->publish(msg);
+
+        geometry_msgs::msg::TransformStamped odom_tf;
+
+        odom_tf.header.stamp = msg.header.stamp;
+        odom_tf.header.frame_id = "odom";
+        odom_tf.child_frame_id = "base_link";
+
+        odom_tf.transform.translation.x = msg.pose.pose.position.x;
+        odom_tf.transform.translation.y = msg.pose.pose.position.y;
+        odom_tf.transform.translation.z = 0.0;
+
+        odom_tf.transform.rotation.x = msg.pose.pose.orientation.x;
+        odom_tf.transform.rotation.y = msg.pose.pose.orientation.y;
+        odom_tf.transform.rotation.z = msg.pose.pose.orientation.z;
+        odom_tf.transform.rotation.w = msg.pose.pose.orientation.w;
+
+        tf_broadcaster_->sendTransform(odom_tf);
     }
 }
     

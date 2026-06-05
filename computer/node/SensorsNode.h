@@ -1,4 +1,6 @@
 #include "rclcpp/rclcpp.hpp"
+#include <tf2_ros/transform_broadcaster.hpp>
+#include <geometry_msgs/msg/transform_stamped.hpp>
 #include "sensor_msgs/msg/laser_scan.hpp"
 #include "sensor_msgs/msg/imu.hpp"
 #include "nav_msgs/msg/odometry.hpp"
@@ -24,6 +26,8 @@ class SensorsNode : public rclcpp::Node
     rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odom_pub_;
     nav_msgs::msg::Odometry EnDataToOdom(const EnPair &data);
 
+    std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
+
     std::shared_ptr<TCPserver> server;
     
     std::thread proc_thread_;
@@ -32,6 +36,10 @@ class SensorsNode : public rclcpp::Node
     bool proc();
 
     static constexpr float WHEEL_TRACK = 0.25; // Odległość między kołami w metrach
+
+    private:
+    uint16_t last_lidar_timestamp_ = 0;
+    bool first_lidar_packet_ = true;
 
     double x_pos_ = 0.0;
     double y_pos_ = 0.0;
