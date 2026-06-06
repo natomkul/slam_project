@@ -32,38 +32,27 @@
 
 #endif
 
-#define POINT_PER_PACK 12
-
-struct LidarPoints
+struct EncoderFrame
 {
-    uint16_t distanceValue;
-    uint8_t confidence;
+    uint8_t encoder;
+    float meters;
+    uint64_t timestamp_delta_ns;
 };
 
-struct LiData
-{
-    int8_t      dataLength;
-    uint16_t    speed;
-    uint16_t    startAngle;
-    LidarPoints point[POINT_PER_PACK];
-    uint16_t    endAngle;
-    uint16_t    timestamp;
-    uint8_t     crc8;
-};
-
-class LidarData
+class EncoderData
 {
  private:
-    LiData data;
+    EncoderFrame data;
 
     socket_t cfd, sfd;
     uint8_t packet_type;
     bool output;
  public:
-    LidarData() = delete;
-    LidarData(socket_t cfd, socket_t sfd, uint8_t packet_type);
+    EncoderData() = delete;
+    EncoderData(socket_t cfd, socket_t sfd, uint8_t packet_type);
 
-    void printLidar();
-    bool LidarRecv();
+    void printEncoder();
+    bool EncoderRecv();
     bool get_output();
+    EncoderFrame get_data();
 };

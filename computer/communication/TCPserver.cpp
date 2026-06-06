@@ -2,6 +2,8 @@
 
 TCPserver::TCPserver(const char* PORT) : PORT(PORT), sfd(-1), cfd(-1)
 {
+    resetPacketDump();
+
 #ifdef _WIN32
     WSADATA wsa;
     if (WSAStartup(MAKEWORD(2,2), &wsa) != 0)
@@ -26,14 +28,21 @@ TCPserver::~TCPserver()
 
 bool TCPserver::AccelHandl()
 {
-    AccelData data(cfd, sfd);
+    AccelData data(cfd, sfd, ACCEL_TYPE);
 
     return data.get_output();
 }
 
 bool TCPserver::LidarHandl()
 {
-    LidarData data(cfd, sfd);
+    LidarData data(cfd, sfd, LIDAR_TYPE);
+
+    return data.get_output();
+}
+
+bool TCPserver::EncoderHandl()
+{
+    EncoderData data(cfd, sfd, ENCODER_TYPE);
 
     return data.get_output();
 }
@@ -156,10 +165,8 @@ bool TCPserver::receiveData()
 
         } else if (ret == 0){
 
-            continue;
+            return false;
         }
-
-        printf("recv data type: %d\n", type);
 
         bool output;
 
@@ -167,6 +174,7 @@ bool TCPserver::receiveData()
         {
             case LIDAR_TYPE: output = LidarHandl(); break;
             case ACCEL_TYPE: output = AccelHandl(); break;
+            case ENCODER_TYPE: output = EncoderHandl(); break;
             default: continue;
         }
 

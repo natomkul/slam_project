@@ -1,6 +1,18 @@
 #include "LidarParser.h"
+#include <chrono>
 
-LidarData::LidarData(socket_t cfd, socket_t sfd) : cfd(cfd), sfd(sfd)
+namespace
+{
+constexpr int LIDAR_PAYLOAD_SIZE = 1 + 2 + 2 + (POINT_PER_PACK * 3) + 2 + 2 + 1;
+
+uint16_t readU16(const uint8_t* buf, int offset)
+{
+    return (uint16_t)buf[offset] | ((uint16_t)buf[offset + 1] << 8);
+}
+}
+
+LidarData::LidarData(socket_t cfd, socket_t sfd, uint8_t packet_type)
+    : cfd(cfd), sfd(sfd), packet_type(packet_type)
 {
     output = LidarRecv();
 }
@@ -32,64 +44,79 @@ void LidarData::printLidar()
 
 bool LidarData::LidarRecv()
 {
-    uint8_t buf[sizeof(data)];
-    int ret;
+    uint8_t buf[LIDAR_PAYLOAD_SIZE];
+    int received = 0;
 
+    while (received < (int)sizeof(buf))
+    {
+        int ret;
 #ifdef _WIN32
-    ret = recv(cfd, (char*)buf, sizeof(buf), 0);
+        ret = recv(cfd, (char*)buf + received, sizeof(buf) - received, 0);
 
-    if (ret < 0)
-    {
-        printf("Lidar recv error: %d\n", WSAGetLastError());
-        closesocket(cfd);
-        closesocket(sfd);
+        if (ret < 0)
+        {
+            printf("Lidar recv error: %d\n", WSAGetLastError());
+            closesocket(cfd);
+            closesocket(sfd);
 
-        WSACleanup();
+            WSACleanup();
 #else
-    ret = recv(cfd, &buf, sizeof(data), 0);
+        ret = recv(cfd, buf + received, sizeof(buf) - received, 0);
     
-    if (ret < 0)
-    {
-        perror("Lidar recv");
-        close(cfd);
-        close(sfd);
+        if (ret < 0)
+        {
+            perror("Lidar recv");
+            close(cfd);
+            close(sfd);
 #endif
-        return false;
+            return false;
     
-    } else if (ret == 0) {
+        } else if (ret == 0) {
     
-        return true;
+            return false;
+        }
+
+        received += ret;
     }
+
+    writePacketDump(packet_type, buf, sizeof(buf));
     
     int offset = 0;
 
     data.dataLength = buf[offset];
     offset += sizeof(uint8_t);
 
-    data.speed = (uint16_t) buf[offset];
+    data.speed = readU16(buf, offset);
     offset += sizeof(uint16_t);
 
-    data.startAngle = (uint16_t) buf[offset];
+    data.startAngle = readU16(buf, offset);
     offset += sizeof(uint16_t);
 
     for (int i = 0; i < POINT_PER_PACK; i++)
     {
-        data.point[i].distanceValue = (uint16_t) buf[offset];
+        data.point[i].distanceValue = readU16(buf, offset);
         offset += sizeof(uint16_t);
 
         data.point[i].confidence = buf[offset];
         offset += sizeof(uint8_t);
     }
 
-    data.endAngle = (uint16_t) buf[offset];
+    data.endAngle = readU16(buf, offset);
     offset += sizeof(uint16_t);
 
-    data.timestamp = (uint16_t) buf[offset];
+    data.timestamp = readU16(buf, offset);
     offset += sizeof(uint16_t);
     
     data.crc8 = buf[offset];
     
-    printLidar();
+    static auto last_print = std::chrono::steady_clock::now() - std::chrono::seconds(1);
+    auto now = std::chrono::steady_clock::now();
+
+    if (now - last_print >= std::chrono::seconds(1))
+    {
+        printLidar();
+        last_print = now;
+    }
 
     return true;
 }
