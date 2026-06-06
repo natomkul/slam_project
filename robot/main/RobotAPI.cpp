@@ -7,11 +7,11 @@
 
 namespace
 {
-    constexpr float pi = 3.14F;
+    constexpr float pi = 3.1415F;
     constexpr float encoderPpr = 7.0F;
-    constexpr float motorGearRatio = 210.0F;
+    constexpr float motorGearRatio = 150.0F;
     constexpr float quadratureEdges = 4.0F;
-    constexpr float wheelRadiusInM = 0.05F;
+    constexpr float wheelRadiusInM = 0.016F;
     constexpr float wheelTrackInM = 0.20F;
 
     int distanceToEncoderTicks(float distanceInM)

@@ -15,6 +15,6 @@ void I2cSlave::setupSlave()
         .scl_speed_hz = sclSpeed,
         .scl_wait_us = 10000,
         .flags = {
-            .disable_ack_check = 1,
+            .disable_ack_check = 0,
         }};
 }

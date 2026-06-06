@@ -167,14 +167,14 @@ void DataExchanger::startTcpClient()
 
         if (sock < 0)
         {
-            vTaskDelay(pdMS_TO_TICKS(2000));
+            vTaskDelay(pdMS_TO_TICKS(100));
             printf("Couldn't connect to a socket\n");
             continue;
         }
         while (true)
         {
             printf("waiting\n");
-            vTaskDelay(pdMS_TO_TICKS(2000));
+            // vTaskDelay(pdMS_TO_TICKS(2000));
             for (std::size_t i = 0; i < sendingVector.size(); i++)
             {
                 sendData(sendingVector[i].first, sendingVector[i].second);

@@ -13,11 +13,11 @@ enum Direction
 
 enum PowerMode // represented in x/255 %
 {
-    ultraSlow = 12,
-    slow = 25,
-    normal = 50,
-    mediumFast = 80,
-    fast = 120,
+    ultraSlow = 100,
+    slow = 150,
+    normal = 180,
+    mediumFast = 200,
+    fast = 220,
     overdrive = 255
 };
 

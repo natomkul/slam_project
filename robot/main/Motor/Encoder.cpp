@@ -5,8 +5,8 @@
 
 #define PI 3.14
 
-Encoder::Encoder(const uint8_t encoderNumber, const uint16_t ppr, const gpio_num_t channelA, const gpio_num_t channelB, const float wheelRadius)
-    : encoderNumber(encoderNumber), ppr(ppr), channelA(channelA), channelB(channelB), wheelRadius(wheelRadius)
+Encoder::Encoder(const uint8_t encoderNumber, const uint16_t ppr, const gpio_num_t channelA, const gpio_num_t channelB, const float wheelRadius, const float tickCorrection)
+    : encoderNumber(encoderNumber), ppr(ppr), channelA(channelA), channelB(channelB), wheelRadius(wheelRadius), tickCorrection(tickCorrection)
 {
     gpio_config_t io_conf{};
     io_conf.intr_type = GPIO_INTR_ANYEDGE;
@@ -24,7 +24,8 @@ Encoder::Encoder(const uint8_t encoderNumber, const uint16_t ppr, const gpio_num
     data[1] = encoderNumber;
 }
 
-Encoder::~Encoder(){
+Encoder::~Encoder()
+{
     gpio_isr_handler_remove(channelA);
     gpio_isr_handler_remove(channelB);
 }
@@ -67,7 +68,7 @@ void IRAM_ATTR Encoder::update()
 
 float Encoder::getRevolutions(int16_t pulseCount) const
 {
-    const float countsPerRevolution = static_cast<float>(ppr) * 210.0 * 4.0;
+    const float countsPerRevolution = static_cast<float>(ppr) * 150.0 * 4.0;
     return pulseCount / countsPerRevolution;
 }
 
@@ -89,6 +90,10 @@ int16_t Encoder::getPulseCount()
 
 int Encoder::receiveData()
 {
+    auto currentTimestamp = std::chrono::steady_clock::now();
+    const std::chrono::duration elapsed{currentTimestamp - previousTimestamp};
+    previousTimestamp = currentTimestamp;
+
     uint16_t currentPulseCount = pulseCount.load();
     uint16_t sentPulseCount = currentPulseCount - previousPulseCount.load();
     int32_t meters = std::bit_cast<int32_t>(getDistanceInMeters(sentPulseCount));
@@ -97,5 +102,12 @@ int Encoder::receiveData()
     data[4] = (meters & 0xFF0000) >> 16;
     data[5] = (meters & 0xFF000000) >> 24;
     previousPulseCount.store(currentPulseCount);
-    return sizeof(data);
+
+    uint64_t nano = elapsed.count();
+    for (int i = 6; i < 6 + 8; i++)
+    {
+        data[i] = nano & 0xFF;
+        nano >>= 8;
+    }
+    return 14;
 }

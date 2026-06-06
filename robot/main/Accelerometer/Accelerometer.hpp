@@ -3,6 +3,7 @@
 #include <driver/i2c_master.h>
 #include <atomic>
 #include "I2c/I2c.hpp"
+#include <chrono>
 
 /*
 Gets data from accelerometer and converts it into packets,
@@ -29,7 +30,7 @@ public:
     Accelerometer(I2c &i2c);
     ~Accelerometer();
 
-    uint8_t data[21];
+    uint8_t data[29];
 
     int receiveData();
 
@@ -38,7 +39,8 @@ private:
     bool isMeasuring = false;
     uint8_t receiveBuffer[20];
     std::shared_ptr<I2cSlave> slave;
-
+    std::chrono::steady_clock::time_point previousTimestamp{
+        std::chrono::steady_clock::now()};
     void initializeI2c();
     void calibrate();
 };

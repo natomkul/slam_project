@@ -49,7 +49,7 @@ void I2c::setUpMaster()
 
 void I2c::transmitReceive(std::shared_ptr<I2cSlave> slave, uint8_t reg, uint8_t *buffer, uint8_t writeSize)
 {
-    esp_ret = i2c_master_transmit_receive(slave->device, &reg, 1, buffer, 20, DEFAULT_TIMEOUT);
+    esp_ret = i2c_master_transmit_receive(slave->device, &reg, 1, buffer, writeSize, DEFAULT_TIMEOUT);
     if (esp_ret != ESP_OK)
     {
         printf("Error: Failed to read from the device\r\n");

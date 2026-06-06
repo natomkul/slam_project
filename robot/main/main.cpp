@@ -13,10 +13,27 @@
 #include "Motor/MotorManager.hpp"
 #include "Pwm/Pwm.hpp"
 #include "DataExchanger/DataExchanger.hpp"
+#include <cmath>
 
 extern "C"
 {
     void app_main(void);
+}
+
+namespace
+{
+    constexpr float pi = 3.1415F;
+    constexpr float encoderPpr = 7.0F;
+    constexpr float motorGearRatio = 150.0F;
+    constexpr float quadratureEdges = 4.0F;
+    constexpr float wheelRadiusInM = 0.016F;
+
+    int distanceToEncoderTicks(float distanceInM)
+    {
+        const float countsPerRevolution = encoderPpr * motorGearRatio * quadratureEdges;
+        const float wheelCircumferenceInM = 2.0F * pi * wheelRadiusInM;
+        return static_cast<int>(0.9434 * std::lround(std::fabs(distanceInM) * countsPerRevolution / wheelCircumferenceInM));
+    }
 }
 
 void app_main()
@@ -28,25 +45,25 @@ void app_main()
     static Accelerometer accelerometer{i2c};
 
     static Lidar lidar{GPIO_NUM_43, GPIO_NUM_44, 230400};
-    static DataExchanger dataExchanger("10.170.219.13", 3000, "realme 9 Pro+", "c4i39885");
+    static DataExchanger dataExchanger("10.52.46.13", 3000, "realme 9 Pro+", "c4i39885");
 
     static Pwm pwm{10000};
-    static Leds leds{pwm}; // empty for now
+    // static Leds leds{pwm}; // empty for now
 
     gpio_install_isr_service(0);
-    
-    static Encoder encoderLeft(1, 7, GPIO_NUM_1, GPIO_NUM_2, 0.05);     // motor 1 {10, 11}, encoders A - 1, B - 2
-    static Motor motorLeft(GPIO_NUM_10, GPIO_NUM_11, encoderLeft, pwm); // Motor 1
 
-    static Encoder encoderRight(2, 7, GPIO_NUM_4, GPIO_NUM_5, 0.05);      // motor 2 {12, 13}, encoders A - 4, B - 5
-    static Motor motorRight(GPIO_NUM_12, GPIO_NUM_13, encoderRight, pwm); // Motor 2
+    static Encoder encoderLeft(1, 7, GPIO_NUM_1, GPIO_NUM_2, 0.016, 0.9434); // motor 1 {10, 11}, encoders A - 1, B - 2
+    static Motor motorLeft(GPIO_NUM_11, GPIO_NUM_10, encoderLeft, pwm);      // Motor 1
+
+    static Encoder encoderRight(2, 7, GPIO_NUM_4, GPIO_NUM_5, 0.016, 0.9434); // motor 2 {12, 13}, encoders A - 4, B - 5
+    static Motor motorRight(GPIO_NUM_12, GPIO_NUM_13, encoderRight, pwm);     // Motor 2
 
     static MotorManager motorManager{};
     motorManager.addMotor(1, motorLeft);
     motorManager.addMotor(2, motorRight);
 
-    static Robot robot{dataExchanger, accelerometer, leds, lidar, motorManager};
-    static RobotAPI robotAPI{robot};
+    // static Robot robot{dataExchanger, accelerometer, leds, lidar, motorManager};
+    // static RobotAPI robotAPI{robot};
 
     dataExchanger.appendToSending(std::bind(&Lidar::receiveData, &lidar), lidar.data);
     dataExchanger.appendToSending(std::bind(&Accelerometer::receiveData, &accelerometer), accelerometer.data);
@@ -57,11 +74,27 @@ void app_main()
 
     printf("\n---start tcp client---\n");
 
-    dataExchanger.startTcpClient();
+    xTaskCreate(
+        [](void *arg)
+        {
+            static_cast<DataExchanger *>(arg)->startTcpClient();
+            vTaskDelete(nullptr);
+        },
+        "tcp_client",
+        8192,
+        &dataExchanger,
+        5,
+        nullptr);
 
     while (true)
     {
-        printf("---\n");
+        printf("---start motor loop --- \n");
+        const auto ticks = distanceToEncoderTicks(0.5);
+        motorManager.moveMotorsForEncoderTicksCount(ticks, mediumFast);
         vTaskDelay(5000 / portTICK_PERIOD_MS);
-    };
+        motorManager.moveMotorsForEncoderTicksCount(-ticks, mediumFast);
+        vTaskDelay(5000 / portTICK_PERIOD_MS);
+    }
+
+    printf("---end --- \n");
 };
