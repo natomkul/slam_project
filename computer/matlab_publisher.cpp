@@ -1,10 +1,11 @@
 #include <winsock2.h>
 #include <ws2tcpip.h>
+#include <windows.h>
 
-#include <array>
 #include <cmath>
 #include <cstring>
 #include <cstdint>
+#include <cstdlib>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
@@ -24,7 +25,15 @@ constexpr size_t LIDAR_PACKET_SIZE = 47;
 constexpr size_t ACCEL_PACKET_SIZE = 29;
 constexpr size_t ENCODER_PACKET_SIZE = 14;
 constexpr int POINT_PER_PACK = 12;
-constexpr int MATLAB_RANGES = 360;
+
+constexpr size_t ACCEL_X_OFFSET = 9;
+constexpr size_t ACCEL_Y_OFFSET = 11;
+constexpr size_t GYRO_Z_OFFSET  = 13;
+constexpr size_t ACCEL_DT_OFFSET = 21;
+
+constexpr size_t ENCODER_ID_OFFSET = 1;
+constexpr size_t ENCODER_DISTANCE_OFFSET = 2;
+constexpr size_t ENCODER_DT_OFFSET = 6;
 
 uint16_t readU16(const std::vector<uint8_t>& data, size_t offset)
 {
@@ -34,6 +43,16 @@ uint16_t readU16(const std::vector<uint8_t>& data, size_t offset)
 int16_t readI16(const std::vector<uint8_t>& data, size_t offset)
 {
     return (int16_t)readU16(data, offset);
+}
+
+uint64_t readU64(const std::vector<uint8_t>& data, size_t offset)
+{
+    uint64_t value = 0;
+    for (int b = 0; b < 8; ++b)
+    {
+        value |= ((uint64_t)data[offset + b]) << (8 * b);
+    }
+    return value;
 }
 
 float readFloat(const std::vector<uint8_t>& data, size_t offset)
@@ -47,6 +66,11 @@ float readFloat(const std::vector<uint8_t>& data, size_t offset)
     float value;
     std::memcpy(&value, &bits, sizeof(value));
     return value;
+}
+
+double nsToSeconds(uint64_t ns)
+{
+    return (double)ns * 1e-9;
 }
 
 bool isPacketStart(uint8_t value)
@@ -88,12 +112,9 @@ std::vector<uint8_t> readDumpBytes(const std::string& path)
 
 bool looksLikeLidar(const std::vector<uint8_t>& bytes, size_t offset)
 {
-    if (offset + LIDAR_PACKET_SIZE > bytes.size() || bytes[offset] != LIDAR_TYPE)
-    {
-        return false;
-    }
-
-    return bytes[offset + 1] == 0x2C;
+    return offset + LIDAR_PACKET_SIZE <= bytes.size() &&
+           bytes[offset] == LIDAR_TYPE &&
+           bytes[offset + 1] == 0x2C;
 }
 
 bool looksLikeAccel(const std::vector<uint8_t>& bytes, size_t offset)
@@ -108,8 +129,8 @@ bool looksLikeEncoder(const std::vector<uint8_t>& bytes, size_t offset)
         return false;
     }
 
-    uint8_t encoder = bytes[offset + 1];
-    return encoder >= 1 && encoder <= 3;
+    uint8_t encoder = bytes[offset + ENCODER_ID_OFFSET];
+    return encoder == 1 || encoder == 2;
 }
 
 bool alignedAt(const std::vector<uint8_t>& bytes, size_t offset)
@@ -117,8 +138,15 @@ bool alignedAt(const std::vector<uint8_t>& bytes, size_t offset)
     return looksLikeLidar(bytes, offset) || looksLikeAccel(bytes, offset) || looksLikeEncoder(bytes, offset);
 }
 
-void decodeLidar(const std::vector<uint8_t>& packet, std::array<double, MATLAB_RANGES>& ranges)
+void decodeLidar(const std::vector<uint8_t>& packet,
+                 std::vector<double>& distancesMeters,
+                 std::vector<double>& anglesDegrees)
 {
+    distancesMeters.clear();
+    anglesDegrees.clear();
+    distancesMeters.reserve(POINT_PER_PACK);
+    anglesDegrees.reserve(POINT_PER_PACK);
+
     uint16_t startAngleRaw = readU16(packet, 4);
     uint16_t endAngleRaw = readU16(packet, 42);
 
@@ -133,7 +161,7 @@ void decodeLidar(const std::vector<uint8_t>& packet, std::array<double, MATLAB_R
     for (int i = 0; i < POINT_PER_PACK; i++)
     {
         size_t pointOffset = 6 + i * 3;
-        double distance = (double)readU16(packet, pointOffset) / 1000.0;
+        double distance = (double)readU16(packet, pointOffset) / 1000.0; // LD06 distance is mm.
         double angle = start + (end - start) * (double)i / (double)(POINT_PER_PACK - 1);
 
         while (angle >= 360.0)
@@ -141,54 +169,79 @@ void decodeLidar(const std::vector<uint8_t>& packet, std::array<double, MATLAB_R
             angle -= 360.0;
         }
 
-        int index = (int)std::round(angle);
-        if (index >= MATLAB_RANGES)
-        {
-            index = 0;
-        }
-
-        if (distance > 0.0)
-        {
-            ranges[index] = distance;
-        }
+        distancesMeters.push_back(distance);
+        anglesDegrees.push_back(angle);
     }
 }
 
-void decodeAccel(const std::vector<uint8_t>& packet, double& gyro)
+void decodeAccel(const std::vector<uint8_t>& packet,
+                 double& imu_dt,
+                 double& gyro,
+                 double& accelerationX,
+                 double& accelerationY)
 {
-    gyro = (double)readI16(packet, 13);
+    accelerationX = (double)readI16(packet, ACCEL_X_OFFSET);
+    accelerationY = (double)readI16(packet, ACCEL_Y_OFFSET);
+    gyro = (double)readI16(packet, GYRO_Z_OFFSET);
+    imu_dt = nsToSeconds(readU64(packet, ACCEL_DT_OFFSET));
 }
 
-void decodeEncoder(const std::vector<uint8_t>& packet, double& distanceR, double& distanceL)
+void decodeEncoder(const std::vector<uint8_t>& packet,
+                   double& en_dt,
+                   double& distanceR,
+                   double& distanceL)
 {
-    uint8_t encoder = packet[1];
-    double meters = (double)readFloat(packet, 2);
-
-    if (encoder == 2)
-    {
-        meters = -meters;
-    }
+    uint8_t encoder = packet[ENCODER_ID_OFFSET];
+    double meters = (double)readFloat(packet, ENCODER_DISTANCE_OFFSET);
+    double dt = nsToSeconds(readU64(packet, ENCODER_DT_OFFSET));
 
     if (encoder == 1)
     {
         distanceR = meters;
+        en_dt = dt;
     }
     else if (encoder == 2)
     {
-        distanceL = meters;
+        distanceL = -meters;
+        en_dt = dt;
     }
 }
 
-std::string buildMatlabPacket(double distanceR, double distanceL, double gyro,
-                              const std::array<double, MATLAB_RANGES>& ranges)
+std::string buildMatlabPacket(double en_dt,
+                              double distanceR,
+                              double distanceL,
+                              double imu_dt,
+                              double gyro,
+                              double accelerationX,
+                              double accelerationY,
+                              const std::vector<double>& lidarDistances,
+                              const std::vector<double>& lidarAngles)
 {
     std::ostringstream oss;
-    oss << std::fixed << std::setprecision(6);
-    oss << distanceR << "," << distanceL << "," << gyro;
+    oss << std::fixed << std::setprecision(9);
 
-    for (double range : ranges)
+    const size_t lidar_n = std::min(lidarDistances.size(), lidarAngles.size());
+
+    // MATLAB expects:
+    // [en_dt, distanceR, distanceL, imu_dt, gyro, accelerationX, accelerationY,
+    //  lidar_n, lidar_dist_1..n, lidar_ang_1..n]
+    oss << en_dt << ","
+        << distanceR << ","
+        << distanceL << ","
+        << imu_dt << ","
+        << gyro << ","
+        << accelerationX << ","
+        << accelerationY << ","
+        << lidar_n;
+
+    for (size_t i = 0; i < lidar_n; ++i)
     {
-        oss << "," << range;
+        oss << "," << lidarDistances[i];
+    }
+
+    for (size_t i = 0; i < lidar_n; ++i)
+    {
+        oss << "," << lidarAngles[i];
     }
 
     oss << "\n";
@@ -211,9 +264,19 @@ int main(int argc, char** argv)
     }
 
     WSADATA wsa;
-    WSAStartup(MAKEWORD(2, 2), &wsa);
+    if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0)
+    {
+        std::cout << "WSAStartup failed\n";
+        return -1;
+    }
 
     SOCKET sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    if (sock == INVALID_SOCKET)
+    {
+        std::cout << "Socket creation failed\n";
+        WSACleanup();
+        return -1;
+    }
 
     sockaddr_in serverAddr{};
     serverAddr.sin_family = AF_INET;
@@ -232,13 +295,68 @@ int main(int argc, char** argv)
 
     std::cout << "Connected!\n";
 
-    std::array<double, MATLAB_RANGES> ranges{};
-    ranges.fill(8.0);
-
+    double en_dt = 0.0;
+    double imu_dt = 0.0;
     double distanceR = 0.0;
     double distanceL = 0.0;
     double gyro = 0.0;
+    double accelerationX = 0.0;
+    double accelerationY = 0.0;
+
+    std::vector<double> accumulatedLidarDistances;
+    std::vector<double> accumulatedLidarAngles;
+    accumulatedLidarDistances.reserve(720);
+    accumulatedLidarAngles.reserve(720);
+
+    bool haveImu = false;
+    bool haveRightEncoder = false;
+    bool haveLeftEncoder = false;
+    bool insideMotionBlock = false;
     int sentPackets = 0;
+
+    auto sendAccumulatedScan = [&]() -> bool
+    {
+        if (accumulatedLidarDistances.empty())
+        {
+            return true;
+        }
+
+        if (!haveImu || !haveRightEncoder || !haveLeftEncoder)
+        {
+            std::cout << "Skipping accumulated LiDAR scan because IMU/right/left encoder data is not ready yet. "
+                      << "points=" << accumulatedLidarDistances.size() << "\n";
+            accumulatedLidarDistances.clear();
+            accumulatedLidarAngles.clear();
+            return true;
+        }
+
+        std::string matlabPacket = buildMatlabPacket(
+            en_dt,
+            distanceR,
+            distanceL,
+            imu_dt,
+            gyro,
+            accelerationX,
+            accelerationY,
+            accumulatedLidarDistances,
+            accumulatedLidarAngles);
+
+        int sent = send(sock, matlabPacket.c_str(), (int)matlabPacket.size(), 0);
+        if (sent == SOCKET_ERROR)
+        {
+            std::cout << "Send failed\n";
+            return false;
+        }
+
+        sentPackets++;
+        std::cout << "Sent MATLAB packet " << sentPackets
+                  << " with " << accumulatedLidarDistances.size() << " LiDAR points\n";
+
+        accumulatedLidarDistances.clear();
+        accumulatedLidarAngles.clear();
+        Sleep((DWORD)delayMs);
+        return true;
+    };
 
     for (size_t i = 0; i < dumpBytes.size();)
     {
@@ -256,26 +374,51 @@ int main(int argc, char** argv)
 
         std::vector<uint8_t> packet(dumpBytes.begin() + i, dumpBytes.begin() + i + size);
 
-        if (packet[0] == LIDAR_TYPE)
+        if (packet[0] == ACCEL_TYPE)
         {
-            decodeLidar(packet, ranges);
-
-            std::string matlabPacket = buildMatlabPacket(distanceR, distanceL, gyro, ranges);
-            send(sock, matlabPacket.c_str(), (int)matlabPacket.size(), 0);
-            sentPackets++;
-            Sleep((DWORD)delayMs);
-        }
-        else if (packet[0] == ACCEL_TYPE)
-        {
-            decodeAccel(packet, gyro);
+            decodeAccel(packet, imu_dt, gyro, accelerationX, accelerationY);
+            haveImu = true;
+            insideMotionBlock = true;
         }
         else if (packet[0] == ENCODER_TYPE)
         {
-            decodeEncoder(packet, distanceR, distanceL);
+            uint8_t encoder = packet[ENCODER_ID_OFFSET];
+            decodeEncoder(packet, en_dt, distanceR, distanceL);
+            if (encoder == 1)
+            {
+                haveRightEncoder = true;
+            }
+            else if (encoder == 2)
+            {
+                haveLeftEncoder = true;
+            }
+            insideMotionBlock = true;
+        }
+        else if (packet[0] == LIDAR_TYPE)
+        {
+            if (insideMotionBlock)
+            {
+                if (!sendAccumulatedScan())
+                {
+                    break;
+                }
+                insideMotionBlock = false;
+            }
+
+            std::vector<double> lidarDistances;
+            std::vector<double> lidarAngles;
+            decodeLidar(packet, lidarDistances, lidarAngles);
+
+            accumulatedLidarDistances.insert(accumulatedLidarDistances.end(),
+                                             lidarDistances.begin(), lidarDistances.end());
+            accumulatedLidarAngles.insert(accumulatedLidarAngles.end(),
+                                          lidarAngles.begin(), lidarAngles.end());
         }
 
         i += size;
     }
+
+    sendAccumulatedScan();
 
     send(sock, "STOP\n", 5, 0);
     std::cout << "Sent " << sentPackets << " MATLAB packets\n";
