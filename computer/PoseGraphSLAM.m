@@ -136,7 +136,7 @@ while true
     end
 
     %relPose = ekfDelta;
-    %useScanMatch = false;
+    useScanMatch = false;
 
     if useScanMatch
         relPose = scanDelta;

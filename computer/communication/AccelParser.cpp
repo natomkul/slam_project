@@ -3,7 +3,7 @@
 
 namespace
 {
-constexpr int ACCEL_PAYLOAD_SIZE = 20 + 8;
+constexpr int ACCEL_PAYLOAD_SIZE = 12 + 8;
 
 int16_t readI16(const uint8_t* buf, int offset)
 {
@@ -32,12 +32,6 @@ AccelData::AccelData(socket_t cfd, socket_t sfd, uint8_t packet_type)
 void AccelData::printAccel()
 {
     printf("===== ACCEL DATA =====\n");
-
-    printf("Magnetometer:\n");
-    printf("  mx: %d\n", data.mx);
-    printf("  my: %d\n", data.my);
-    printf("  mz: %d\n", data.mz);
-    printf("  rhall: %d\n", data.rhall);
 
     printf("Gyroscope:\n");
     printf("  gx: %d\n", data.gx);
@@ -94,18 +88,6 @@ bool AccelData::AccelRecv()
     writePacketDump(packet_type, buf, sizeof(buf));
     
     int offset = 0;
-
-    data.mx = readI16(buf, offset);
-    offset += sizeof(uint16_t);
-    
-    data.my = readI16(buf, offset);
-    offset += sizeof(uint16_t);
-    
-    data.mz = readI16(buf, offset);
-    offset += sizeof(uint16_t);
-    
-    data.rhall = readI16(buf, offset);
-    offset += sizeof(uint16_t);
 
     data.gx = readI16(buf, offset);
     offset += sizeof(uint16_t);

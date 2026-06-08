@@ -22,14 +22,14 @@ constexpr uint8_t ACCEL_TYPE = 0x67;
 constexpr uint8_t ENCODER_TYPE = 0x68;
 
 constexpr size_t LIDAR_PACKET_SIZE = 47;
-constexpr size_t ACCEL_PACKET_SIZE = 29;
+constexpr size_t ACCEL_PACKET_SIZE = 21;
 constexpr size_t ENCODER_PACKET_SIZE = 14;
 constexpr int POINT_PER_PACK = 12;
 
-constexpr size_t ACCEL_X_OFFSET = 9;
-constexpr size_t ACCEL_Y_OFFSET = 11;
-constexpr size_t GYRO_Z_OFFSET  = 13;
-constexpr size_t ACCEL_DT_OFFSET = 21;
+constexpr size_t GYRO_Z_OFFSET = 5;
+constexpr size_t ACCEL_X_OFFSET = 7;
+constexpr size_t ACCEL_Y_OFFSET = 9;
+constexpr size_t ACCEL_DT_OFFSET = 13;
 
 constexpr size_t ENCODER_ID_OFFSET = 1;
 constexpr size_t ENCODER_DISTANCE_OFFSET = 2;
