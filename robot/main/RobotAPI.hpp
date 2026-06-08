@@ -4,7 +4,7 @@
 #include <atomic>
 #include <cstdint>
 
-enum RequestType
+enum RequestType : uint32_t
 {
     move,
     rotate
@@ -12,9 +12,9 @@ enum RequestType
 
 struct Request
 {
-    RequestType type;
-    float distanceInM;
-    float rotationAngle;
+    RequestType type;    // 4 bytes
+    float distanceInM;   // 4 bytes
+    float rotationAngle; // 4 bytes
 };
 
 /*
