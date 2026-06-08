@@ -35,7 +35,7 @@ public:
     void start(bool forward, PowerMode powerMode);
     void stop();
     void resetEncoder();
-    int16_t getEncoderTicks();
+    int64_t getEncoderTicks();
 
     const gpio_num_t portNumberA;
     const gpio_num_t portNumberB;

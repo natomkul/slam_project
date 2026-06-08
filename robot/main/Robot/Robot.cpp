@@ -23,12 +23,12 @@ void Robot::stop() {
 
 };
 
-void Robot::moveMotorsForEncoderTicksCount(int ticks, PowerMode powerMode)
+void Robot::moveMotorsForEncoderTicksCount(int64_t ticks, PowerMode powerMode)
 {
     motorManager.moveMotorsForEncoderTicksCount(ticks, powerMode);
 }
 
-void Robot::rotateMotorsForEncoderTicksCount(int ticks, PowerMode powerMode)
+void Robot::rotateMotorsForEncoderTicksCount(int64_t ticks, PowerMode powerMode)
 {
     motorManager.rotateMotorsForEncoderTicksCount(ticks, powerMode);
 }

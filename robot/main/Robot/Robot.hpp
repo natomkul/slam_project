@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include "Accelerometer/Accelerometer.hpp"
 #include "DataExchanger/DataExchanger.hpp"
 #include "Led/Leds.hpp"
@@ -24,8 +25,8 @@ public:
     ~Robot();
 
     DataExchanger &dataExchanger;
-    void moveMotorsForEncoderTicksCount(int ticks, PowerMode powerMode);
-    void rotateMotorsForEncoderTicksCount(int ticks, PowerMode powerMode);
+    void moveMotorsForEncoderTicksCount(int64_t ticks, PowerMode powerMode);
+    void rotateMotorsForEncoderTicksCount(int64_t ticks, PowerMode powerMode);
 
 private:
     Accelerometer &accelerometer;

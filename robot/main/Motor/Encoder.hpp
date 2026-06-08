@@ -20,10 +20,10 @@ public:
     void update();
 
     static void IRAM_ATTR gpio_isr_handler(void *arg);
-    float getRevolutions(int16_t pulseCount) const;
-    float getDistanceInMeters(int16_t pulseCount) const;
+    float getRevolutions(int64_t pulseCount) const;
+    float getDistanceInMeters(int64_t pulseCount) const;
     float getVelocityInMpS();
-    int16_t getPulseCount();
+    int64_t getPulseCount();
     void reset();
 
     int receiveData();
@@ -40,7 +40,7 @@ private:
 
     std::chrono::steady_clock::time_point previousTimestamp{
         std::chrono::steady_clock::now()};
-    std::atomic<int16_t> pulseCount{0};
-    std::atomic<int16_t> previousPulseCount{0};
+    std::atomic<int64_t> pulseCount{0};
+    std::atomic<int64_t> previousPulseCount{0};
     uint8_t previousState{0};
 };

@@ -1,23 +1,27 @@
 #include "MotorManager.hpp"
-#include <cmath>
 
-MotorManager::MotorManager() = default;
-
-MotorManager::~MotorManager() = default;
+namespace
+{
+    int64_t absTicks(int64_t ticks)
+    {
+        return ticks < 0 ? -ticks : ticks;
+    }
+}
 
 void MotorManager::addMotor(const int motorNumber, Motor &motor)
 {
     motors.insert({motorNumber, motor});
 };
 
-void MotorManager::moveMotorsForEncoderTicksCount(int ticks, PowerMode powerMode)
+void MotorManager::moveMotorsForEncoderTicksCount(int64_t ticks, PowerMode powerMode)
 {
-    const int targetTicks = std::abs(ticks);
+    const int64_t targetTicks = absTicks(ticks);
     const Direction direction = ticks >= 0 ? forward : reverse;
+    std::map<int, int64_t> startTicks;
 
-    for (auto &[_, motor] : motors)
+    for (auto &[motorNumber, motor] : motors)
     {
-        motor.resetEncoder();
+        startTicks[motorNumber] = motor.getEncoderTicks();
         motor.start(direction == forward, powerMode);
     }
 
@@ -25,9 +29,10 @@ void MotorManager::moveMotorsForEncoderTicksCount(int ticks, PowerMode powerMode
     {
         bool allReached = true;
 
-        for (auto &[_, motor] : motors)
+        for (auto &[motorNumber, motor] : motors)
         {
-            if (std::abs(motor.getEncoderTicks()) >= targetTicks)
+            const int64_t movedTicks = motor.getEncoderTicks() - startTicks.at(motorNumber);
+            if (absTicks(movedTicks) >= targetTicks)
             {
                 motor.stop();
             }
@@ -44,16 +49,17 @@ void MotorManager::moveMotorsForEncoderTicksCount(int ticks, PowerMode powerMode
     }
 }
 
-void MotorManager::rotateMotorsForEncoderTicksCount(int ticks, PowerMode powerMode)
+void MotorManager::rotateMotorsForEncoderTicksCount(int64_t ticks, PowerMode powerMode)
 {
-    const int targetTicks = std::abs(ticks);
+    const int64_t targetTicks = absTicks(ticks);
     const Direction leftDirection = ticks >= 0 ? forward : reverse;
     const Direction rightDirection = ticks >= 0 ? reverse : forward;
+    std::map<int, int64_t> startTicks;
 
     for (auto &[motorNumber, motor] : motors)
     {
         const Direction direction = motorNumber == 1 ? leftDirection : rightDirection;
-        motor.resetEncoder();
+        startTicks[motorNumber] = motor.getEncoderTicks();
         motor.start(direction == forward, powerMode);
     }
 
@@ -61,9 +67,10 @@ void MotorManager::rotateMotorsForEncoderTicksCount(int ticks, PowerMode powerMo
     {
         bool allReached = true;
 
-        for (auto &[_, motor] : motors)
+        for (auto &[motorNumber, motor] : motors)
         {
-            if (std::abs(motor.getEncoderTicks()) >= targetTicks)
+            const int64_t movedTicks = motor.getEncoderTicks() - startTicks.at(motorNumber);
+            if (absTicks(movedTicks) >= targetTicks)
             {
                 motor.stop();
             }

@@ -48,7 +48,7 @@ void app_main()
     static DataExchanger dataExchanger("10.52.46.13", 3000, "realme 9 Pro+", "c4i39885");
 
     static Pwm pwm{10000};
-    // static Leds leds{pwm}; // empty for now
+    static Leds leds{pwm}; // empty for now
 
     gpio_install_isr_service(0);
 
@@ -62,8 +62,8 @@ void app_main()
     motorManager.addMotor(1, motorLeft);
     motorManager.addMotor(2, motorRight);
 
-    // static Robot robot{dataExchanger, accelerometer, leds, lidar, motorManager};
-    // static RobotAPI robotAPI{robot};
+    static Robot robot{dataExchanger, accelerometer, leds, lidar, motorManager};
+    static RobotAPI robotAPI{robot};
 
     dataExchanger.appendToSending(std::bind(&Lidar::receiveData, &lidar), lidar.data);
     dataExchanger.appendToSending(std::bind(&Accelerometer::receiveData, &accelerometer), accelerometer.data);

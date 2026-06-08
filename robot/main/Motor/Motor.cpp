@@ -32,7 +32,7 @@ void Motor::resetEncoder()
     encoder.reset();
 }
 
-int16_t Motor::getEncoderTicks()
+int64_t Motor::getEncoderTicks()
 {
     return encoder.getPulseCount();
 }

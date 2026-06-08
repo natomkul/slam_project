@@ -6,7 +6,7 @@ namespace
 {
 #define i2cAddress 0x69
 #define cmdRegister 0x7E
-#define dataRegister 0x04
+#define dataRegister 0x0C
 }
 
 Accelerometer::Accelerometer(I2c &i2c) : i2c(i2c)
@@ -45,17 +45,17 @@ int Accelerometer::receiveData()
     const std::chrono::duration elapsed{currentTimestamp - previousTimestamp};
     previousTimestamp = currentTimestamp;
 
-    i2c.transmitReceive(slave, dataRegister, receiveBuffer, 20);
-    for (int i = 1; i < 21; i++)
+    i2c.transmitReceive(slave, dataRegister, receiveBuffer, 12);
+    for (int i = 1; i < 13; i++)
     {
         data[i] = receiveBuffer[i - 1];
     }
     uint64_t nano = elapsed.count();
 
-    for (int i = 21; i < 21 + 8; i++)
+    for (int i = 13; i < 13 + 8; i++)
     {
         data[i] = nano & 0xFF;
         nano >>= 8;
     }
-    return 29;
+    return 21;
 }

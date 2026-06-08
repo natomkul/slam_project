@@ -13,10 +13,6 @@ is raw data afaik.
 
 // struct data {
 //     uint8_t header{0x67};
-//     int16_t magnitudeX;
-//     int16_t magnitudeY;
-//     int16_t magnitudeZ;
-//     int16_t rhall;
 //     int16_t gyroscopeX;
 //     int16_t gyroscopeY;
 //     int16_t gyroscopeZ;
@@ -30,14 +26,14 @@ public:
     Accelerometer(I2c &i2c);
     ~Accelerometer();
 
-    uint8_t data[29];
+    uint8_t data[21];
 
     int receiveData();
 
 private:
     I2c &i2c;
     bool isMeasuring = false;
-    uint8_t receiveBuffer[20];
+    uint8_t receiveBuffer[12];
     std::shared_ptr<I2cSlave> slave;
     std::chrono::steady_clock::time_point previousTimestamp{
         std::chrono::steady_clock::now()};

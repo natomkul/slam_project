@@ -66,13 +66,13 @@ void IRAM_ATTR Encoder::update()
     previousState = currentState;
 }
 
-float Encoder::getRevolutions(int16_t pulseCount) const
+float Encoder::getRevolutions(int64_t pulseCount) const
 {
     const float countsPerRevolution = static_cast<float>(ppr) * 150.0 * 4.0;
-    return pulseCount / countsPerRevolution;
+    return static_cast<float>(pulseCount) / countsPerRevolution;
 }
 
-float Encoder::getDistanceInMeters(int16_t pulseCount) const
+float Encoder::getDistanceInMeters(int64_t pulseCount) const
 {
     const float circumference = 2.0 * static_cast<float>(PI) * wheelRadius;
     return getRevolutions(pulseCount) * circumference;
@@ -83,7 +83,7 @@ void Encoder::reset()
     pulseCount.store(0);
 }
 
-int16_t Encoder::getPulseCount()
+int64_t Encoder::getPulseCount()
 {
     return pulseCount.load();
 }
@@ -94,14 +94,14 @@ int Encoder::receiveData()
     const std::chrono::duration elapsed{currentTimestamp - previousTimestamp};
     previousTimestamp = currentTimestamp;
 
-    uint16_t currentPulseCount = pulseCount.load();
-    uint16_t sentPulseCount = currentPulseCount - previousPulseCount.load();
+    int64_t currentPulseCount = pulseCount.load();
+    int64_t sentPulseCount = currentPulseCount - previousPulseCount.load();
+    previousPulseCount.store(currentPulseCount);
     int32_t meters = std::bit_cast<int32_t>(getDistanceInMeters(sentPulseCount));
     data[2] = meters & 0xFF;
     data[3] = (meters & 0xFF00) >> 8;
     data[4] = (meters & 0xFF0000) >> 16;
     data[5] = (meters & 0xFF000000) >> 24;
-    previousPulseCount.store(currentPulseCount);
 
     uint64_t nano = elapsed.count();
     for (int i = 6; i < 6 + 8; i++)
