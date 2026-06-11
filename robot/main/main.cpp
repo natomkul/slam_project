@@ -5,6 +5,7 @@
 #include "driver/i2c_master.h"
 
 #include <chrono>
+#include <cstdint>
 #include <thread>
 #include <stdio.h>
 
@@ -27,13 +28,28 @@ namespace
     constexpr float motorGearRatio = 150.0F;
     constexpr float quadratureEdges = 4.0F;
     constexpr float wheelRadiusInM = 0.016F;
+    constexpr float wheelTrackInM = 0.163F * (90.0F / 101.0F);
 
     int distanceToEncoderTicks(float distanceInM)
     {
         const float countsPerRevolution = encoderPpr * motorGearRatio * quadratureEdges;
         const float wheelCircumferenceInM = 2.0F * pi * wheelRadiusInM;
-        return static_cast<int>(0.9434 * std::lround(std::fabs(distanceInM) * countsPerRevolution / wheelCircumferenceInM));
+        return static_cast<int>(std::lround(distanceInM * countsPerRevolution / wheelCircumferenceInM));
     }
+
+    int wheelRevolutionsToEncoderTicks(float wheelRevolutions)
+    {
+        const float countsPerRevolution = encoderPpr * motorGearRatio * quadratureEdges;
+        return static_cast<int>(std::lround(wheelRevolutions * countsPerRevolution));
+    }
+
+    int angleToEncoderTicks(float angleInDegrees)
+    {
+        const float angleInRadians = angleInDegrees * pi / 180.0F;
+        const float wheelDistanceInM = angleInRadians * wheelTrackInM / 2.0F;
+        return distanceToEncoderTicks(wheelDistanceInM);
+    }
+
 }
 
 void app_main()
@@ -52,11 +68,11 @@ void app_main()
 
     gpio_install_isr_service(0);
 
-    static Encoder encoderLeft(1, 7, GPIO_NUM_1, GPIO_NUM_2, 0.016, 0.9434); // motor 1 {10, 11}, encoders A - 1, B - 2
-    static Motor motorLeft(GPIO_NUM_11, GPIO_NUM_10, encoderLeft, pwm);      // Motor 1
+    static Encoder encoderLeft(1, 7, GPIO_NUM_1, GPIO_NUM_2, 0.016, 50.0F / 53.0F); // motor 1 {10, 11}, encoders A - 1, B - 2
+    static Motor motorLeft(GPIO_NUM_11, GPIO_NUM_10, encoderLeft, pwm);             // Motor 1
 
-    static Encoder encoderRight(2, 7, GPIO_NUM_4, GPIO_NUM_5, 0.016, 0.9434); // motor 2 {12, 13}, encoders A - 4, B - 5
-    static Motor motorRight(GPIO_NUM_12, GPIO_NUM_13, encoderRight, pwm);     // Motor 2
+    static Encoder encoderRight(2, 7, GPIO_NUM_4, GPIO_NUM_5, 0.016, 50.0F / 53.0F); // motor 2 {12, 13}, encoders A - 4, B - 5
+    static Motor motorRight(GPIO_NUM_12, GPIO_NUM_13, encoderRight, pwm);            // Motor 2
 
     static MotorManager motorManager{};
     motorManager.addMotor(1, motorLeft);
@@ -88,12 +104,22 @@ void app_main()
 
     while (true)
     {
-        printf("---start motor loop --- \n");
-        const auto ticks = distanceToEncoderTicks(0.5);
-        motorManager.moveMotorsForEncoderTicksCount(ticks, mediumFast);
-        vTaskDelay(5000 / portTICK_PERIOD_MS);
-        motorManager.moveMotorsForEncoderTicksCount(-ticks, mediumFast);
-        vTaskDelay(5000 / portTICK_PERIOD_MS);
+        motorManager.moveMotorsForEncoderTicksCount(distanceToEncoderTicks(0.5), mediumFast);
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
+        motorManager.rotateMotorsForEncoderTicksCount(angleToEncoderTicks(90), mediumFast);
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
+        motorManager.moveMotorsForEncoderTicksCount(distanceToEncoderTicks(0.25), mediumFast);
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
+        motorManager.rotateMotorsForEncoderTicksCount(angleToEncoderTicks(90), mediumFast);
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
+        motorManager.moveMotorsForEncoderTicksCount(distanceToEncoderTicks(0.5), mediumFast);
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
+        motorManager.rotateMotorsForEncoderTicksCount(angleToEncoderTicks(90), mediumFast);
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
+        motorManager.moveMotorsForEncoderTicksCount(distanceToEncoderTicks(0.25), mediumFast);
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
+        motorManager.rotateMotorsForEncoderTicksCount(angleToEncoderTicks(90), mediumFast);
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
 
     printf("---end --- \n");

@@ -30,7 +30,7 @@ public:
 
     uint8_t data[14];
 
-private:
+public:
     const uint8_t encoderNumber;
     const uint16_t ppr; // pulses per revolution
     const gpio_num_t channelA;

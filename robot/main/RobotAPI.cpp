@@ -12,13 +12,13 @@ namespace
     constexpr float motorGearRatio = 150.0F;
     constexpr float quadratureEdges = 4.0F;
     constexpr float wheelRadiusInM = 0.016F;
-    constexpr float wheelTrackInM = 0.20F;
+    constexpr float wheelTrackInM = 0.16F;
 
     int distanceToEncoderTicks(float distanceInM)
     {
         const float countsPerRevolution = encoderPpr * motorGearRatio * quadratureEdges;
         const float wheelCircumferenceInM = 2.0F * pi * wheelRadiusInM;
-        return static_cast<int>(std::lround(std::fabs(distanceInM) * countsPerRevolution / wheelCircumferenceInM));
+        return static_cast<int>(0.9434F * std::lround(std::fabs(distanceInM) * countsPerRevolution / wheelCircumferenceInM));
     }
 
     int angleToEncoderTicks(float angleInDegrees)

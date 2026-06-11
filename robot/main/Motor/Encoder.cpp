@@ -68,7 +68,7 @@ void IRAM_ATTR Encoder::update()
 
 float Encoder::getRevolutions(int64_t pulseCount) const
 {
-    const float countsPerRevolution = static_cast<float>(ppr) * 150.0 * 4.0;
+    const float countsPerRevolution = static_cast<float>(ppr) * 150.0F * 4.0F;
     return static_cast<float>(pulseCount) / countsPerRevolution;
 }
 
@@ -103,7 +103,7 @@ int Encoder::receiveData()
     data[4] = (meters & 0xFF0000) >> 16;
     data[5] = (meters & 0xFF000000) >> 24;
 
-    uint64_t nano = elapsed.count();
+    uint64_t nano = std::chrono::duration_cast<std::chrono::nanoseconds>(elapsed).count();
     for (int i = 6; i < 6 + 8; i++)
     {
         data[i] = nano & 0xFF;
