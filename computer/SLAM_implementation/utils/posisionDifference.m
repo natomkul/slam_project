@@ -1,5 +1,4 @@
 function dif = posisionDifference(posision1, posision2)
-
     x1 = posision1(1);
     y1 = posision1(2);
     a1 = posision1(3);
