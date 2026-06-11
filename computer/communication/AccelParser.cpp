@@ -4,6 +4,7 @@
 namespace
 {
 constexpr int ACCEL_PAYLOAD_SIZE = 12 + 8;
+constexpr uint64_t MAX_ACCEL_DT_NS = 200000000;
 
 int16_t readI16(const uint8_t* buf, int offset)
 {
@@ -20,6 +21,27 @@ uint64_t readU64(const uint8_t* buf, int offset)
     }
 
     return value;
+}
+
+bool isSaneAccelFrame(const AccData& data)
+{
+    if (data.timestamp_delta_ns == 0 || data.timestamp_delta_ns > MAX_ACCEL_DT_NS)
+    {
+        return false;
+    }
+
+    if (data.gx == INT16_MIN || data.gy == INT16_MIN || data.gz == INT16_MIN ||
+        data.ax == INT16_MIN || data.ay == INT16_MIN || data.az == INT16_MIN)
+    {
+        return false;
+    }
+
+    const int64_t accel_magnitude_sq =
+        (int64_t)data.ax * data.ax +
+        (int64_t)data.ay * data.ay +
+        (int64_t)data.az * data.az;
+
+    return accel_magnitude_sq >= 4000000 && accel_magnitude_sq <= 900000000;
 }
 }
 
@@ -85,8 +107,6 @@ bool AccelData::AccelRecv()
         received += ret;
     }
 
-    writePacketDump(packet_type, buf, sizeof(buf));
-    
     int offset = 0;
 
     data.gx = readI16(buf, offset);
@@ -109,6 +129,21 @@ bool AccelData::AccelRecv()
 
     data.timestamp_delta_ns = readU64(buf, offset);
     offset += sizeof(uint64_t);
+
+    if (!isSaneAccelFrame(data))
+    {
+        printf("Discarding invalid accel frame: gx=%d gy=%d gz=%d ax=%d ay=%d az=%d timestamp_delta_ns=%llu\n",
+               data.gx,
+               data.gy,
+               data.gz,
+               data.ax,
+               data.ay,
+               data.az,
+               (unsigned long long)data.timestamp_delta_ns);
+        return true;
+    }
+
+    writePacketDump(packet_type, buf, sizeof(buf));
 
     static auto last_print = std::chrono::steady_clock::now() - std::chrono::seconds(1);
     auto now = std::chrono::steady_clock::now();

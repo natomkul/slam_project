@@ -34,6 +34,7 @@ constexpr size_t ACCEL_DT_OFFSET = 13;
 constexpr size_t ENCODER_ID_OFFSET = 1;
 constexpr size_t ENCODER_DISTANCE_OFFSET = 2;
 constexpr size_t ENCODER_DT_OFFSET = 6;
+constexpr uint64_t MAX_ACCEL_DT_NS = 200000000;
 
 uint16_t readU16(const std::vector<uint8_t>& data, size_t offset)
 {
@@ -122,6 +123,35 @@ bool looksLikeAccel(const std::vector<uint8_t>& bytes, size_t offset)
     return offset + ACCEL_PACKET_SIZE <= bytes.size() && bytes[offset] == ACCEL_TYPE;
 }
 
+bool isSaneAccel(const std::vector<uint8_t>& packet)
+{
+    const int16_t gx = readI16(packet, 1);
+    const int16_t gy = readI16(packet, 3);
+    const int16_t gz = readI16(packet, 5);
+    const int16_t ax = readI16(packet, 7);
+    const int16_t ay = readI16(packet, 9);
+    const int16_t az = readI16(packet, 11);
+    const uint64_t dt = readU64(packet, ACCEL_DT_OFFSET);
+
+    if (dt == 0 || dt > MAX_ACCEL_DT_NS)
+    {
+        return false;
+    }
+
+    if (gx == INT16_MIN || gy == INT16_MIN || gz == INT16_MIN ||
+        ax == INT16_MIN || ay == INT16_MIN || az == INT16_MIN)
+    {
+        return false;
+    }
+
+    const int64_t accelMagnitudeSq =
+        (int64_t)ax * ax +
+        (int64_t)ay * ay +
+        (int64_t)az * az;
+
+    return accelMagnitudeSq >= 4000000 && accelMagnitudeSq <= 900000000;
+}
+
 bool looksLikeEncoder(const std::vector<uint8_t>& bytes, size_t offset)
 {
     if (offset + ENCODER_PACKET_SIZE > bytes.size() || bytes[offset] != ENCODER_TYPE)
@@ -174,16 +204,22 @@ void decodeLidar(const std::vector<uint8_t>& packet,
     }
 }
 
-void decodeAccel(const std::vector<uint8_t>& packet,
+bool decodeAccel(const std::vector<uint8_t>& packet,
                  double& imu_dt,
                  double& gyro,
                  double& accelerationX,
                  double& accelerationY)
 {
+    if (!isSaneAccel(packet))
+    {
+        return false;
+    }
+
     accelerationX = (double)readI16(packet, ACCEL_X_OFFSET);
     accelerationY = (double)readI16(packet, ACCEL_Y_OFFSET);
     gyro = (double)readI16(packet, GYRO_Z_OFFSET);
     imu_dt = nsToSeconds(readU64(packet, ACCEL_DT_OFFSET));
+    return true;
 }
 
 void decodeEncoder(const std::vector<uint8_t>& packet,
@@ -376,9 +412,15 @@ int main(int argc, char** argv)
 
         if (packet[0] == ACCEL_TYPE)
         {
-            decodeAccel(packet, imu_dt, gyro, accelerationX, accelerationY);
-            haveImu = true;
-            insideMotionBlock = true;
+            if (decodeAccel(packet, imu_dt, gyro, accelerationX, accelerationY))
+            {
+                haveImu = true;
+                insideMotionBlock = true;
+            }
+            else
+            {
+                std::cout << "Skipping invalid accel packet\n";
+            }
         }
         else if (packet[0] == ENCODER_TYPE)
         {
