@@ -35,6 +35,10 @@ constexpr size_t ENCODER_ID_OFFSET = 1;
 constexpr size_t ENCODER_DISTANCE_OFFSET = 2;
 constexpr size_t ENCODER_DT_OFFSET = 6;
 constexpr uint64_t MAX_ACCEL_DT_NS = 200000000;
+constexpr int MAX_GYRO_RAW = 26214; // 200 dps on a +/-250 dps scale.
+constexpr int MAX_ACCEL_AXIS_RAW = 30000;
+constexpr int64_t MIN_ACCEL_MAGNITUDE_SQ = 4000000;
+constexpr int64_t MAX_ACCEL_MAGNITUDE_SQ = 900000000;
 
 uint16_t readU16(const std::vector<uint8_t>& data, size_t offset)
 {
@@ -123,6 +127,11 @@ bool looksLikeAccel(const std::vector<uint8_t>& bytes, size_t offset)
     return offset + ACCEL_PACKET_SIZE <= bytes.size() && bytes[offset] == ACCEL_TYPE;
 }
 
+bool withinAbs(int16_t value, int max_abs)
+{
+    return value >= -max_abs && value <= max_abs;
+}
+
 bool isSaneAccel(const std::vector<uint8_t>& packet)
 {
     const int16_t gx = readI16(packet, 1);
@@ -144,12 +153,23 @@ bool isSaneAccel(const std::vector<uint8_t>& packet)
         return false;
     }
 
+    if (!withinAbs(gx, MAX_GYRO_RAW) ||
+        !withinAbs(gy, MAX_GYRO_RAW) ||
+        !withinAbs(gz, MAX_GYRO_RAW) ||
+        !withinAbs(ax, MAX_ACCEL_AXIS_RAW) ||
+        !withinAbs(ay, MAX_ACCEL_AXIS_RAW) ||
+        !withinAbs(az, MAX_ACCEL_AXIS_RAW))
+    {
+        return false;
+    }
+
     const int64_t accelMagnitudeSq =
         (int64_t)ax * ax +
         (int64_t)ay * ay +
         (int64_t)az * az;
 
-    return accelMagnitudeSq >= 4000000 && accelMagnitudeSq <= 900000000;
+    return accelMagnitudeSq >= MIN_ACCEL_MAGNITUDE_SQ &&
+           accelMagnitudeSq <= MAX_ACCEL_MAGNITUDE_SQ;
 }
 
 bool looksLikeEncoder(const std::vector<uint8_t>& bytes, size_t offset)

@@ -5,6 +5,10 @@ namespace
 {
 constexpr int ACCEL_PAYLOAD_SIZE = 12 + 8;
 constexpr uint64_t MAX_ACCEL_DT_NS = 200000000;
+constexpr int MAX_GYRO_RAW = 26214; // 200 dps on a +/-250 dps scale.
+constexpr int MAX_ACCEL_AXIS_RAW = 30000;
+constexpr int64_t MIN_ACCEL_MAGNITUDE_SQ = 4000000;
+constexpr int64_t MAX_ACCEL_MAGNITUDE_SQ = 900000000;
 
 int16_t readI16(const uint8_t* buf, int offset)
 {
@@ -23,6 +27,11 @@ uint64_t readU64(const uint8_t* buf, int offset)
     return value;
 }
 
+bool withinAbs(int16_t value, int max_abs)
+{
+    return value >= -max_abs && value <= max_abs;
+}
+
 bool isSaneAccelFrame(const AccData& data)
 {
     if (data.timestamp_delta_ns == 0 || data.timestamp_delta_ns > MAX_ACCEL_DT_NS)
@@ -36,12 +45,23 @@ bool isSaneAccelFrame(const AccData& data)
         return false;
     }
 
+    if (!withinAbs(data.gx, MAX_GYRO_RAW) ||
+        !withinAbs(data.gy, MAX_GYRO_RAW) ||
+        !withinAbs(data.gz, MAX_GYRO_RAW) ||
+        !withinAbs(data.ax, MAX_ACCEL_AXIS_RAW) ||
+        !withinAbs(data.ay, MAX_ACCEL_AXIS_RAW) ||
+        !withinAbs(data.az, MAX_ACCEL_AXIS_RAW))
+    {
+        return false;
+    }
+
     const int64_t accel_magnitude_sq =
         (int64_t)data.ax * data.ax +
         (int64_t)data.ay * data.ay +
         (int64_t)data.az * data.az;
 
-    return accel_magnitude_sq >= 4000000 && accel_magnitude_sq <= 900000000;
+    return accel_magnitude_sq >= MIN_ACCEL_MAGNITUDE_SQ &&
+           accel_magnitude_sq <= MAX_ACCEL_MAGNITUDE_SQ;
 }
 }
 
