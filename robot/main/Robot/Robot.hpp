@@ -1,31 +1,41 @@
 #pragma once
 
+#include <cstdint>
 #include "Accelerometer/Accelerometer.hpp"
 #include "DataExchanger/DataExchanger.hpp"
 #include "Led/Leds.hpp"
 #include "Lidar/Lidar.hpp"
-#include "Motor/Motor.hpp"
-#include "State.hpp"
+#include "Motor/MotorManager.hpp"
+
+enum State
+{
+    stopped,
+    connected,
+    running,
+    crashed
+};
 
 /*
 Class of robot itself.
 */
-class Robot {
-    public:
-    Robot(Accelerometer accelerometer, Leds leds, Lidar lidar, Motor motor, DataExchanger dataExchanger) :
-        accelerometer(accelerometer),
-        leds(leds),
-        lidar(lidar),
-        motor(motor),
-        dataExchanger(dataExchanger)
-        {}
-    ~Robot() = default;
+class Robot
+{
+public:
+    Robot(DataExchanger &dataExchanger, Accelerometer &accelerometer, Leds &leds, Lidar &lidar, MotorManager &motorManager);
+    ~Robot();
 
-    private:
-    Accelerometer accelerometer;
-    Leds leds;
-    Lidar lidar;
-    Motor motor;
-    State state;
-    DataExchanger dataExchanger;
+    DataExchanger &dataExchanger;
+    void moveMotorsForEncoderTicksCount(int64_t ticks, PowerMode powerMode);
+    void rotateMotorsForEncoderTicksCount(int64_t ticks, PowerMode powerMode);
+
+private:
+    Accelerometer &accelerometer;
+    Leds &leds;
+    Lidar &lidar;
+    MotorManager &motorManager;
+
+    State state = stopped;
+
+    void start();
+    void stop();
 };

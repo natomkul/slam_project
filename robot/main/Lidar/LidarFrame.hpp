@@ -4,8 +4,8 @@
 #define ANGLE_PER_FRAME 12
 #define HEADER 0x54
 
-
-typedef struct __attribute__((packed)){
+typedef struct __attribute__((packed))
+{
     uint16_t distanceValue;
     uint8_t confidence;
 } DataPoints;

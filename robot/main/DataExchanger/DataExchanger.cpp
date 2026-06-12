@@ -1,92 +1,123 @@
 #include "DataExchanger.hpp"
 #include "Uart/Uart.hpp"
 
-#include "esp_wifi.h"
-#include "esp_log.h"
-#include "esp_check.h"
-#include "esp_mac.h"
-#include "esp_eth.h"
-#include "esp_netif.h"
-#include "esp_http_server.h"
-#include "esp_http_client.h"
-#include "esp_event.h"
-#include "esp_system.h"
+#include <cerrno>
 
-#include "lwip/inet.h"
-#include "lwip/netdb.h"
-#include "lwip/sockets.h"
-#include "lwip/ip_addr.h"
-#include "lwip/err.h"
-#include "lwip/sys.h"
-
-#include "nvs_flash.h"
-#include "ping/ping_sock.h"
-#include "driver/gpio.h"
-
-static const char *TAG = "TCP SOCKET Client";
-QueueHandle_t sendQueue;
-
-EventGroupHandle_t wifi_event_group;
 #define WIFI_CONNECTED_BIT BIT0
+#define WIFI_CONNECT_TIMEOUT_MS 15000
 
-DataExchanger::DataExchanger(std::string serverIP, int port, std::string ssid, std::string password) 
-    : serverIP(serverIP), port(port), ssid(ssid), password(password)
+static const char *TAG = "DataExchanger";
+static EventGroupHandle_t wifi_event_group;
+static StaticEventGroup_t wifi_event_group_buffer;
+static esp_netif_t *sta_netif = nullptr;
+static bool wifi_handlers_registered = false;
+static bool wifi_driver_initialized = false;
+
+DataExchanger::DataExchanger(const std::string ip, const uint16_t port, const std::string ssid, const std::string password)
+    : ip(ip), port(port), ssid(ssid), password(password)
 {
-    //sendQueue = xQueueCreate(10, sizeof(Packet));
-    sendMutex = xSemaphoreCreateMutex();
-    wifiConnection();
-};
-
-void DataExchanger::getLidarReceiveDataMethod(std::function<Packet()> method) {
-    lidarReceiveData = method;
+    wifi_event_group = xEventGroupCreateStatic(&wifi_event_group_buffer);
+    connectToWifi();
 }
 
-void DataExchanger::getAccelerometerReceiveDataMethod(std::function<Packet()> method) {
-    accelerometerReceiveData = method;
-}
+DataExchanger::~DataExchanger() = default;
 
-void DataExchanger::wifiEventHandler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data){
-    switch (event_id)
+void DataExchanger::connectToWifi()
+{
+    esp_err_t err = nvs_flash_init();
+    if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND)
     {
-    case WIFI_EVENT_STA_CONNECTED:
-        ESP_LOGI(TAG, "WiFi connected");
-        break;
-    case WIFI_EVENT_STA_DISCONNECTED:
-        ESP_LOGW(TAG, "WiFi disconnected, retrying...");
-        esp_wifi_connect();
-        break;
-    case IP_EVENT_STA_GOT_IP:
-        xEventGroupSetBits(wifi_event_group, WIFI_CONNECTED_BIT);
-        ESP_LOGI(TAG, "Got server IP, ready");
-        break;
-    default:
-        break;
+        ESP_ERROR_CHECK(nvs_flash_erase());
+        err = nvs_flash_init();
     }
-}
+    ESP_ERROR_CHECK(err);
+    err = esp_netif_init();
+    if (err != ESP_OK && err != ESP_ERR_INVALID_STATE)
+    {
+        ESP_ERROR_CHECK(err);
+    }
 
-void DataExchanger::wifiConnection(){
-    nvs_flash_init();
-    esp_netif_init();
-    esp_event_loop_create_default();
-    esp_netif_create_default_wifi_sta();
-    
-    wifi_init_config_t wifi_initiation = WIFI_INIT_CONFIG_DEFAULT();
-    esp_wifi_init(&wifi_initiation);
-    esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, wifiEventHandler, NULL);
-    esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, wifiEventHandler, NULL);
+    err = esp_event_loop_create_default();
+    if (err != ESP_OK && err != ESP_ERR_INVALID_STATE)
+    {
+        ESP_ERROR_CHECK(err);
+    }
+
+    if (sta_netif == nullptr)
+    {
+        sta_netif = esp_netif_create_default_wifi_sta();
+    }
+
+    if (!wifi_driver_initialized)
+    {
+        wifi_init_config_t wifi_initiation = WIFI_INIT_CONFIG_DEFAULT();
+        err = esp_wifi_init(&wifi_initiation);
+        if (err != ESP_OK && err != ESP_ERR_INVALID_STATE)
+        {
+            ESP_ERROR_CHECK(err);
+        }
+        wifi_driver_initialized = true;
+    }
+    if (!wifi_handlers_registered)
+    {
+        ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, wifiEventHandler, NULL));
+        ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, wifiEventHandler, NULL));
+        wifi_handlers_registered = true;
+    }
 
     wifi_config_t wifi_configuration = {};
-    strncpy((char*)wifi_configuration.sta.ssid,
-        ssid.c_str(), sizeof(wifi_configuration.sta.ssid));
-    strncpy((char*)wifi_configuration.sta.password,
-        password.c_str(), sizeof(wifi_configuration.sta.password));
+    strncpy((char *)wifi_configuration.sta.ssid,
+            ssid.c_str(), sizeof(wifi_configuration.sta.ssid));
+    strncpy((char *)wifi_configuration.sta.password,
+            password.c_str(), sizeof(wifi_configuration.sta.password));
 
     wifi_configuration.sta.threshold.authmode = WIFI_AUTH_WPA2_PSK;
+    wifi_configuration.sta.pmf_cfg.capable = true;
+    wifi_configuration.sta.pmf_cfg.required = false;
 
-    esp_wifi_set_config(WIFI_IF_STA, &wifi_configuration);
-    esp_wifi_set_mode(WIFI_MODE_STA);
-    esp_wifi_start();
-    esp_wifi_connect();
+    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
+    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_configuration));
+    err = esp_wifi_start();
+    if (err != ESP_OK && err != ESP_ERR_WIFI_CONN)
+    {
+        ESP_ERROR_CHECK(err);
+    }
+
+    err = esp_wifi_connect();
+    if (err != ESP_OK && err != ESP_ERR_WIFI_CONN)
+    {
+        ESP_ERROR_CHECK(err);
+    }
+
+    EventBits_t wifi_bits = xEventGroupWaitBits(
+        wifi_event_group,
+        WIFI_CONNECTED_BIT,
+        pdFALSE,
+        pdTRUE,
+        pdMS_TO_TICKS(WIFI_CONNECT_TIMEOUT_MS));
+
+    if ((wifi_bits & WIFI_CONNECTED_BIT) == 0)
+    {
+        ESP_LOGW(TAG, "WiFi connect timeout. Ensure SSID is 2.4GHz and credentials are correct.");
+    }
+};
+
+void DataExchanger::wifiEventHandler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data)
+{
+    if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_CONNECTED)
+    {
+        printf("WiFi connected\n");
+    }
+    else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED)
+    {
+        printf("WiFi disconnected, retrying...\n");
+        esp_wifi_connect();
+    }
+    else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP)
+    {
+        xEventGroupSetBits(wifi_event_group, WIFI_CONNECTED_BIT);
+        printf("Got IP, ready\n");
+    }
 }
 
 int DataExchanger::createSocketAndConnect()
@@ -95,9 +126,9 @@ int DataExchanger::createSocketAndConnect()
     dest_addr.sin_family = AF_INET;
     dest_addr.sin_port = htons(port);
 
-    if (inet_pton(AF_INET, serverIP.c_str(), &dest_addr.sin_addr) <= 0)
+    if (inet_pton(AF_INET, ip.c_str(), &dest_addr.sin_addr) <= 0)
     {
-        ESP_LOGE(TAG, "Invalid IP");
+        printf("Invalid Ip");
         return -1;
     }
 
@@ -116,7 +147,7 @@ int DataExchanger::createSocketAndConnect()
     timeout.tv_usec = 0;
     setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
 
-    ESP_LOGI(TAG, "Connecting to %s:%d", serverIP.c_str(), port);
+    printf("Connecting to %s:%d", ip.c_str(), port);
 
     if (connect(sock, (struct sockaddr *)&dest_addr, sizeof(dest_addr)) != 0)
     {
@@ -127,61 +158,7 @@ int DataExchanger::createSocketAndConnect()
 
     ESP_LOGI(TAG, "Connected!");
     return sock;
-}
-
-void DataExchanger::tcpSendLidarDataTask(void* arg)
-{
-    auto* self = static_cast<DataExchanger*>(arg);
-
-    while (true)
-    {
-        Packet packet = self->lidarReceiveData();
-
-        if (xSemaphoreTake(self->sendMutex, portMAX_DELAY) == pdTRUE){
-            int sent = send(self->sock, packet.data, packet.length, 0);
-            xSemaphoreGive(self->sendMutex);
-
-            if (sent < 0){
-                ESP_LOGE("TCP", "Lidar packet send failed: errno %d", errno);
-                self->socketAlive = false;
-                break;
-            }
-        }
-
-        vTaskDelay(pdMS_TO_TICKS(50));
-    }
-
-    vTaskDelete(NULL);
-}
-
-void DataExchanger::tcpSendAccelerometerDataTask(void* arg)
-{
-    auto* self = static_cast<DataExchanger*>(arg);
-
-    while (true)
-    {
-        Packet packet = self->accelerometerReceiveData();
-
-        if (xSemaphoreTake(self->sendMutex, portMAX_DELAY) == pdTRUE){
-            int sent = send(self->sock, packet.data, packet.length, 0);
-            xSemaphoreGive(self->sendMutex);
-
-            if (sent < 0){
-                ESP_LOGE("TCP", "Accelerometer packet send failed: errno %d", errno);
-                self->socketAlive = false;
-                break;
-            }
-        }
-
-        vTaskDelay(pdMS_TO_TICKS(50));
-    }
-
-    vTaskDelete(NULL);
-}
-
-void DataExchanger::tcpRecieveTask(void* arg){
-    //
-}
+};
 
 void DataExchanger::startTcpClient()
 {
@@ -191,33 +168,95 @@ void DataExchanger::startTcpClient()
 
         if (sock < 0)
         {
-            vTaskDelay(pdMS_TO_TICKS(2000));
+            vTaskDelay(pdMS_TO_TICKS(100));
+            printf("Couldn't connect to a socket\n");
             continue;
         }
-
-        socketAlive = true;
-        ESP_LOGI(TAG, "Socket ready: %d", sock);
-
-        TaskHandle_t sendLidarDataTaskHandle = nullptr;
-        TaskHandle_t sendAccelerometerDataTaskHandle = nullptr;
-        //TaskHandle_t recvTaskHandle = nullptr;
-
-        xTaskCreate(tcpSendLidarDataTask, "tcpSendLidarData", 4096, this, 5, &sendLidarDataTaskHandle);
-        xTaskCreate(tcpSendAccelerometerDataTask, "tcpSendAccelerometerData", 4096, this, 5, &sendAccelerometerDataTaskHandle);
-        //xTaskCreate(tcpRecieveTask, "tcpRecv", 4096, (void*)sock, 5, &recvTaskHandle);
-
-        while (socketAlive)
+        while (true)
         {
-            vTaskDelay(pdMS_TO_TICKS(500));
+            printf("waiting\n");
+            // vTaskDelay(pdMS_TO_TICKS(2000));
+            for (std::size_t i = 0; i < sendingVector.size(); i++)
+            {
+                sendData(sendingVector[i].first, sendingVector[i].second);
+            }
+            if (!receiveData())
+            {
+                close(sock);
+                sock = -1;
+                break;
+            }
+            vTaskDelay(pdMS_TO_TICKS(50));
         }
-
-        ESP_LOGW(TAG, "Connection lost.");
-
-        close(sock);
-        if (sendLidarDataTaskHandle) vTaskDelete(sendLidarDataTaskHandle);
-        if (sendAccelerometerDataTaskHandle) vTaskDelete(sendAccelerometerDataTaskHandle);
-        //if (recvTaskHandle) vTaskDelete(recvTaskHandle);
-
-        vTaskDelay(pdMS_TO_TICKS(2000));
     }
+}
+
+void DataExchanger::appendToSending(std::function<int()> method, uint8_t *bufferPointer)
+{
+    sendingVector.push_back({method, bufferPointer});
+}
+
+void DataExchanger::appendToReceiving(std::function<void()> method, uint8_t *bufferPointer, std::size_t bufferSize)
+{
+    receivingVector.push_back({method, bufferPointer, bufferSize, 0});
+}
+
+void DataExchanger::sendData(std::function<int()> method, uint8_t *bufferPointer)
+{
+    int length = method();
+    if (length < 0)
+    {
+        printf("Length < 0\n");
+        abort();
+        // throw
+    }
+    else if (length == 0)
+    {
+        printf("No data to send\n");
+        // no data to send
+    }
+    else
+    {
+        int sent = send(sock, bufferPointer, length, 0);
+        if (sent < 0)
+        {
+            printf("error sent < 0");
+            // throw
+        }
+        else
+        {
+            printf("%d bytes of data  succeesfully sent!", sent);
+        }
+    }
+}
+
+bool DataExchanger::receiveData()
+{
+    for (auto &entry : receivingVector)
+    {
+        const std::size_t remainingBytes = entry.bufferSize - entry.bytesReceived;
+        const int received = recv(sock, entry.bufferPointer + entry.bytesReceived, remainingBytes, MSG_DONTWAIT);
+
+        if (received > 0)
+        {
+            entry.bytesReceived += static_cast<std::size_t>(received);
+            if (entry.bytesReceived == entry.bufferSize)
+            {
+                entry.method();
+                entry.bytesReceived = 0;
+            }
+        }
+        else if (received == 0)
+        {
+            ESP_LOGW(TAG, "Socket closed by peer");
+            return false;
+        }
+        else if (errno != EAGAIN && errno != EWOULDBLOCK)
+        {
+            ESP_LOGW(TAG, "Receive failed: errno %d", errno);
+            return false;
+        }
+    }
+
+    return true;
 }
