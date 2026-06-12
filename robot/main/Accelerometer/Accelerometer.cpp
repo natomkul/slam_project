@@ -122,3 +122,10 @@ int Accelerometer::receiveData()
     }
     return 21;
 }
+
+Packet Accelerometer::receivePackedData()
+{
+    packedData[0] = 0x67;
+    std::memcpy(packedData + 1, &data, sizeof(AccelerometerData));
+    return Packet(packedData, 21);
+}
