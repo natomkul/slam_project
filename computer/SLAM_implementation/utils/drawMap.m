@@ -1,4 +1,18 @@
-function drawMap(occMap, ekfHist, poseGraphHist, x_est)
+function drawMap(occMap, ekfHist, poseGraphHist, x_est, goalX, goalY, showGoal, navWaypoints, navFig)
+    if nargin < 5
+        goalX = [];
+        goalY = [];
+    end
+    if nargin < 7
+        showGoal = ~isempty(goalX);
+    end
+    if nargin < 8
+        navWaypoints = [];
+    end
+    if nargin < 9
+        navFig = [];
+    end
+
     cla;
     show(occMap);
     hold on;
@@ -18,6 +32,16 @@ function drawMap(occMap, ekfHist, poseGraphHist, x_est)
        0.25*cos(x_est(3)), 0.25*sin(x_est(3)), ...
        0, 'b', 'LineWidth', 2, 'MaxHeadSize', 2, ...
        'DisplayName', 'Kierunek jazdy');
+
+    if showGoal && ~isempty(goalX) && ~isempty(goalY)
+        plot(goalX, goalY, 'gp', 'MarkerSize', 14, 'MarkerFaceColor', 'g', ...
+            'DisplayName', 'Cel nawigacji');
+    end
+
+    if ~isempty(navWaypoints) && size(navWaypoints, 1) >= 2
+        plot(navWaypoints(:, 1), navWaypoints(:, 2), 'c--', 'LineWidth', 1.5, ...
+            'DisplayName', 'Planowana trasa');
+    end
     
     legend("Location", "northeast");
     grid on;
@@ -25,5 +49,12 @@ function drawMap(occMap, ekfHist, poseGraphHist, x_est)
     xlabel('x [m]');
     ylabel('y [m]');
     title('Trajektoria robota oraz mapa');
+
+    if ~isempty(navFig) && ishandle(navFig)
+        ax = gca;
+        ax.ButtonDownFcn = @(~, ~) navigationGoalClick(navFig, ax);
+        ax.PickableParts = 'all';
+    end
+
     drawnow;
 end

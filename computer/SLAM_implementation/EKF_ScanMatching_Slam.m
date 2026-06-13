@@ -36,13 +36,31 @@ mapUpdateStep = 5;        % frequency of rebuilding map
 graphOptimizeStep = 10;   % frequency of optimization of graph
 drawStep = 5;             % frequency of redrawing the map
 
+% Nav commands -> C++ server
+navCmdHost = "127.0.0.1";
+navCmdPort = 5006;
+
+navParams.stopDist = 0.10;
+navParams.maxMoveStep = 0.10;
+navParams.maxRotateStep = deg2rad(30);
+navParams.rotateThreshold = deg2rad(15);
+
+navFig = figure('Name', 'SLAM');
+setupNavigationGoalClick(navFig);
+
 %% MAIN LOOP %%
 
 tcpObj = tcpserver("127.0.0.1", 5005);
+cmdClient = [];
 
 while true
+    drawnow limitrate;
+
+    cmdClient = ensureNavCommandClient(cmdClient, navCmdHost, navCmdPort);
+
     %% Read TCP packet
     if tcpObj.NumBytesAvailable <= 0
+        drawnow limitrate;
         pause(0.01);
         continue;
     end
@@ -122,7 +140,12 @@ while true
         ekfPoseHist(nodeId, :) = ekfPose;
         ekfHist(:, end+1) = x_est(1:2);
     
-        drawMap(occMap, ekfHist, [], x_est);
+        runNavigationStep(cmdClient, navFig, x_est, occMap, navParams);
+        drawnow limitrate;
+        [goalX, goalY, showGoal] = readNavigationGoal(navFig, x_est);
+        navWaypoints = getNavigationWaypoints(navFig);
+        figure(navFig);
+        drawMap(occMap, ekfHist, [], x_est, goalX, goalY, showGoal, navWaypoints, navFig);
         continue;
     end
 
@@ -206,11 +229,18 @@ while true
     prevScan = scan;
     prevPoseEKF = ekfPose;
 
-    if mod(nodeId, drawStep) == 0
-          drawMap(occMap, ekfHist, [], x_est);
+    runNavigationStep(cmdClient, navFig, x_est, occMap, navParams);
+    drawnow limitrate;
+
+    [goalX, goalY, showGoal] = readNavigationGoal(navFig, x_est);
+    navWaypoints = getNavigationWaypoints(navFig);
+    if showGoal || mod(nodeId, drawStep) == 0
+        figure(navFig);
+        drawMap(occMap, ekfHist, [], x_est, goalX, goalY, showGoal, navWaypoints, navFig);
     end
 end
 
+cmdClient = closeNavCommandClient(cmdClient);
 clear tcpObj;
 
 

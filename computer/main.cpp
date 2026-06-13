@@ -1,19 +1,25 @@
 #include "TCPserver.h"
 
-#define PORT "3000"
+#define ROBOT_PORT "3000"
+#define NAV_CMD_PORT "5006"
 
 int main()
 {
-    bool proc = true;
+    TCPserver server(ROBOT_PORT, NAV_CMD_PORT);
 
-    TCPserver server(PORT);
-    
     if (!server.connectSock())
     {
         return -1;
     }
 
-    while(server.receiveData()) {}
+    if (!server.initNavCommandServer())
+    {
+        return -1;
+    }
+
+    while (server.poll())
+    {
+    }
 
     return 0;
 }
