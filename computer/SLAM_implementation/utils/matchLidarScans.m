@@ -15,7 +15,7 @@ function delta = matchLidarScans(scan, refScan, initialPosition, maxIter)
 
     for iter = 1:maxIter
 
-        transformed = transformPoints2D(sourcePoints, pose);
+        transformed = transformPoints(sourcePoints, pose);
 
         idx = nearestNeighbors(transformed, refPoints);
         matchedrefPoints = refPoints(idx, :);

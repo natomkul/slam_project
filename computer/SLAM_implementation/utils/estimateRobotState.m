@@ -16,7 +16,7 @@ function [r_next, F] = estimateRobotState(r, u, enDt, imuDt, L)
 
     angle = r(3);
     angleGyro = angle + gyro * imuDt;
-    angleEn = angle + (distanceR - distanceL) / L;
+    angleEn = angle + (distanceL - distanceR) / L;
     finalAngle = wrapToPi(0.8 * angleGyro + 0.2 * angleEn);
     
     if enDt > 0
@@ -33,5 +33,5 @@ function [r_next, F] = estimateRobotState(r, u, enDt, imuDt, L)
     F = [1 0 -distance * sin(finalAngle)    0;
          0 1  distance * cos(finalAngle)    0;
          0 0  1                             0;
-         0 0  0                             0];
+         0 0  0                             1];
 end

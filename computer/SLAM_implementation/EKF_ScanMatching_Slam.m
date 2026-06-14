@@ -8,7 +8,7 @@ Q = diag([1e-3, 1e-3, deg2rad(4)^2, 1e-1]);
 lidarR = diag([0.20^2, 0.20^2, deg2rad(10)^2]);
 
 % EKF state: [x; y; angle; v]
-x_est = [0; 0; pi/2 + pi/4; 0];
+x_est = [0; 0; 0; 0];
 P = diag([1, 1, 0.5, 1]);
 
 % Occupancy map
@@ -68,7 +68,7 @@ while true
     distanceL = dataRead(3);
     imuDt = dataRead(4);
     gyro = (dataRead(5));
-    gyro = -deg2rad((gyro*250)/32768);
+    gyro = deg2rad((gyro*250)/32768);
 
     accelerationX = dataRead(6);
     accelerationY = dataRead(7);
@@ -86,7 +86,7 @@ while true
 
     lidar_dist(lidar_dist <= 0) = maxRange;
     lidar_dist(lidar_dist > maxRange) = maxRange;
-    lidar_ang = wrapToPi(deg2rad(lidar_ang));
+    lidar_ang = wrapToPi(-deg2rad(lidar_ang));
     
     scan = makeLidarScan(lidar_dist, lidar_ang, maxRange);
 
@@ -122,7 +122,7 @@ while true
         ekfPoseHist(nodeId, :) = ekfPose;
         ekfHist(:, end+1) = x_est(1:2);
     
-        drawMap(occMap, ekfHist, [], x_est);
+        drawMap(occMap, ekfHist, x_est);
         continue;
     end
 
@@ -207,7 +207,7 @@ while true
     prevPoseEKF = ekfPose;
 
     if mod(nodeId, drawStep) == 0
-          drawMap(occMap, ekfHist, [], x_est);
+          drawMap(occMap, ekfHist, x_est);
     end
 end
 

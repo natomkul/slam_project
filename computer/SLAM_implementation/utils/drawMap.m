@@ -1,18 +1,13 @@
-function drawMap(occMap, ekfHist, poseGraphHist, x_est)
+function drawMap(occMap, ekfHist, x_est)
     cla;
     show(occMap);
     hold on;
     
     plot(ekfHist(1,:), ekfHist(2,:), 'r-', 'LineWidth', 2, ...
-        'DisplayName', 'Trajektoria estymowana przez EKF');
-    
-    if ~isempty(poseGraphHist)
-        plot(poseGraphHist(1,:), poseGraphHist(2,:), 'g-', 'LineWidth', 2, ...
-            'DisplayName', 'Trajektoria robota');
-    end
+        'DisplayName', 'Estymowana trajektoria');
     
     plot(x_est(1), x_est(2), 'ro', 'MarkerFaceColor', '#F2A696', ...
-        'DisplayName', 'Aktualna pozycja robota', 'MarkerSize', 10);
+        'DisplayName', 'Aktualna estymata pozycji robota', 'MarkerSize', 10);
 
     quiver(x_est(1), x_est(2), ...
        0.25*cos(x_est(3)), 0.25*sin(x_est(3)), ...
