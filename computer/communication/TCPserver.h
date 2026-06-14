@@ -2,11 +2,13 @@
 
 #include "LidarParser.h"
 #include "AccelParser.h"
+#include "EncoderParser.h"
  
 #define BACKLOG 10
 
 #define LIDAR_TYPE 0x54
 #define ACCEL_TYPE 0x67
+#define ENCODER_TYPE 0x68
 
 class TCPserver
 {
@@ -21,6 +23,7 @@ class TCPserver
 
     bool AccelHandl();
     bool LidarHandl();
+    bool EncoderHandl();
  
     bool connectSock();
     bool receiveData();

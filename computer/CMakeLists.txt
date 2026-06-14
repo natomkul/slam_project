@@ -21,6 +21,10 @@ add_executable(server
     ${COMMUNICATION_SOURCES}
 )
 
+add_executable(matlab_publisher
+    matlab_publisher.cpp
+)
+
 # include headers
 target_include_directories(server PRIVATE
     ${CMAKE_SOURCE_DIR}/communication
@@ -28,4 +32,5 @@ target_include_directories(server PRIVATE
 
 if(WIN32)
     target_link_libraries(server PRIVATE ws2_32)
+    target_link_libraries(matlab_publisher PRIVATE ws2_32)
 endif()

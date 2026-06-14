@@ -13,6 +13,7 @@ Current TYPEs:
 
   LIDAR          0x54
   ACCEL          0x67
+  ENCODER        0x68
 
 
 
@@ -26,17 +27,23 @@ LIDAR binary packet protocol:
 - Timestamp: 2 bytes (ms, wraps at 30000)
 - CRC8: 1 byte checksum
 
-ACCEL (Accelerometer) binary packet protocol:
+ACCEL binary packet protocol:
 
-- Magnitude X:   2 bytes
-- Magnitude Y:   2 bytes
-- Magnitude Z:   2 bytes
-- RHALL:         2 bytes
 - Gyroscope X:   2 bytes
 - Gyroscope Y:   2 bytes
 - Gyroscope Z:   2 bytes
 - Acceleration X: 2 bytes
 - Acceleration Y: 2 bytes
 - Acceleration Z: 2 bytes
+- Timestamp delta: 8 bytes, little-endian uint64 nanoseconds
 
 TOTAL PAYLOAD SIZE: 20 bytes
+TOTAL PACKET SIZE:  21 bytes including TYPE
+
+ENCODER binary packet protocol:
+
+- Encoder number: 1 byte
+- Meters:         4 bytes, little-endian IEEE-754 float
+- Timestamp delta: 8 bytes, little-endian uint64 nanoseconds
+
+TOTAL PAYLOAD SIZE: 13 bytes

@@ -6,6 +6,7 @@
 #include <cstdlib>
 #include <cstdint>
 #include <string>
+#include "PacketDump.h"
 
 #ifdef _WIN32
     #define _WINSOCK_DEPRECATED_NO_WARNINGS
@@ -33,10 +34,9 @@
 
 struct AccData
 {
-    int16_t mx, my, mz;
-    int16_t rhall;
     int16_t gx, gy, gz;
     int16_t ax, ay, az;
+    uint64_t timestamp_delta_ns;
 };
 
 class AccelData
@@ -45,10 +45,11 @@ class AccelData
     AccData data;
 
     socket_t cfd, sfd;
+    uint8_t packet_type;
     bool output;
  public:
     AccelData() = delete;
-    AccelData(socket_t cfd, socket_t sfd);
+    AccelData(socket_t cfd, socket_t sfd, uint8_t packet_type);
     
     void printAccel();
     bool AccelRecv();
